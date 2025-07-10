@@ -15,8 +15,8 @@ market_ticker = st.text_input(
 ).strip().upper()
 
 # Set default start date to 1 year ago and end date to today
-end_date = datetime.now().date() # Current date: July 11, 2025
-start_date = end_date - timedelta(days=365) # One year ago
+end_date = datetime.now().date()
+start_date = end_date - timedelta(days=365)
 
 col1, col2 = st.columns(2)
 with col1:
@@ -30,7 +30,7 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
             try:
                 data = yf.download(market_ticker, start=chart_start_date, end=chart_end_date)
 
-                # --- CRITICAL FIX: Add return if data is empty immediately after download ---
+                # --- CRITICAL FIX: Handle empty data immediately ---
                 if data.empty:
                     st.warning(f"No historical data found for '{market_ticker}' in the specified date range ({chart_start_date} to {chart_end_date}). This could be due to an incorrect ticker, an unsupported date range, or no trading activity.")
                     if 'ai_summary_data' not in st.session_state:
@@ -40,7 +40,7 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                         "date_range": f"{chart_start_date} to {chart_end_date}",
                         "data_summary": "No data found."
                     }
-                    return # Exit the function/block if no data is found
+                    return # Exit the function/block if no data is found, preventing subsequent errors
 
                 # ONLY proceed with data processing if data is NOT empty
                 st.write("--- Raw Data Fetched (Head) ---")
@@ -54,13 +54,14 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                 st.dataframe(data.tail())
                 st.write("-----------------------------")
 
+                # These variables will now be safe to access as 'data' is not empty
                 first_open = data['Open'].iloc[0] if not data['Open'].empty else None
                 last_close = data['Close'].iloc[-1] if not data['Close'].empty else None
                 max_high = data['High'].max() if not data['High'].empty else None
                 min_low = data['Low'].min() if not data['Low'].empty else None
 
                 summary_parts = [f"Fetched {len(data)} data points."]
-                # Use np.isnan checks more carefully, ensuring value is not None first
+                # Ensure values are not None/NaN before formatting with :.2f
                 summary_parts.append(f"Start Open: {first_open:.2f}" if first_open is not None and not np.isnan(first_open) else "Start Open: N/A")
                 summary_parts.append(f"End Close: {last_close:.2f}" if last_close is not None and not np.isnan(last_close) else "End Close: N/A")
                 summary_parts.append(f"Max High: {max_high:.2f}" if max_high is not None and not np.isnan(max_high) else "Max High: N/A")
