@@ -6,7 +6,7 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import numpy as np # Ensure numpy is imported for np.isnan
 
-# ... (rest of your initial page setup, title, info, ticker input, date inputs) ...
+# ... (rest of your page setup code) ...
 
 if st.button("Get Market Data", key="mt_get_market_data_btn"):
     if market_ticker:
@@ -14,10 +14,10 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
             try:
                 data = yf.download(market_ticker, start=chart_start_date, end=chart_end_date)
 
-                # --- The CRITICAL FIX: Add a return statement if data is empty ---
+                # --- APPLY THIS FIX ---
                 if data.empty:
                     st.warning(f"No historical data found for '{market_ticker}' in the specified date range ({chart_start_date} to {chart_end_date}). This could be due to an incorrect ticker, an unsupported date range, or no trading activity.")
-                    # Capture for AI Summary (as before)
+                    # Update AI summary data for no results
                     if 'ai_summary_data' not in st.session_state:
                         st.session_state['ai_summary_data'] = {}
                     st.session_state['ai_summary_data']['Market Trend Visualization'] = {
@@ -25,9 +25,9 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                         "date_range": f"{chart_start_date} to {chart_end_date}",
                         "data_summary": "No data found."
                     }
-                    return # This line prevents the formatting error by exiting early
+                    return # <--- This is the crucial line: Exit if no data is found
 
-                # ONLY proceed with data processing if data is NOT empty
+                # --- ONLY execute the following code if 'data' is NOT empty ---
                 st.write("--- Raw Data Fetched (Head) ---")
                 for col in ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']:
                     if col in data.columns:
@@ -39,14 +39,13 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                 st.dataframe(data.tail())
                 st.write("-----------------------------")
 
-                # These calculations will now only run if 'data' is not empty
                 first_open = data['Open'].iloc[0] if not data['Open'].empty else None
                 last_close = data['Close'].iloc[-1] if not data['Close'].empty else None
                 max_high = data['High'].max() if not data['High'].empty else None
                 min_low = data['Low'].min() if not data['Low'].empty else None
 
                 summary_parts = [f"Fetched {len(data)} data points."]
-                # These conditional formats ensure only numbers are formatted
+                # These conditional formats prevent errors if values are None or NaN
                 summary_parts.append(f"Start Open: {first_open:.2f}" if first_open is not None and not np.isnan(first_open) else "Start Open: N/A")
                 summary_parts.append(f"End Close: {last_close:.2f}" if last_close is not None and not np.isnan(last_close) else "End Close: N/A")
                 summary_parts.append(f"Max High: {max_high:.2f}" if max_high is not None and not np.isnan(max_high) else "Max High: N/A")
@@ -55,7 +54,6 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                 # ... (rest of your AI summary data capture for success) ...
 
             except Exception as e:
-                # This outer exception catch will handle other errors during data fetching/processing
                 st.error(f"An error occurred while fetching market data for {market_ticker}: {e}. Please ensure the ticker is correct and try again with a valid date range.")
                 # ... (rest of your AI summary data capture for error) ...
     else:
