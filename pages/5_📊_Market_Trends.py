@@ -31,7 +31,7 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                 data = yf.download(market_ticker, start=chart_start_date, end=chart_end_date)
 
                 # --- CRITICAL FIX: Ensure this entire 'if' block has correct indentation ---
-                if data.empty: # This line should be properly indented
+                if data.empty: # This 'if' block starts here
                     st.warning(f"No historical data found for '{market_ticker}' in the specified date range ({chart_start_date} to {chart_end_date}). This could be due to an incorrect ticker, an unsupported date range, or no trading activity.")
                     if 'ai_summary_data' not in st.session_state:
                         st.session_state['ai_summary_data'] = {}
@@ -41,7 +41,7 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                         "data_summary": "No data found."
                     }
                     # Line 43: This 'return' statement MUST be indented at the same level as the 'st.warning' and 'if 'ai_summary_data' not in st.session_state:' lines above it.
-return
+                    return
 
                 # ONLY proceed with data processing if data is NOT empty
                 st.write("--- Raw Data Fetched (Head) ---")
