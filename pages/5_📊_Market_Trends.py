@@ -79,15 +79,16 @@ if st.button("Get Market Data"):
             # --- Candlestick Chart ---
             st.subheader("📊 Candlestick Chart")
             fig = go.Figure(data=[
-                go.Candlestick(
-                    x=data.index,
-                    open=data['Open'],
-                    high=data['High'],
-                    low=data['Low'],
-                    close=data['Close'],
-                    name="Price"
-                )
-            ])
+            go.Candlestick(
+            x=data.index.tolist(),
+            open=data['Open'].tolist(),
+            high=data['High'].tolist(),
+            low=data['Low'].tolist(),
+            close=data['Close'].tolist(),
+            name="Price"
+            )
+        ])
+
 
             fig.update_layout(
                 title=f"Candlestick Chart for {market_ticker}",
