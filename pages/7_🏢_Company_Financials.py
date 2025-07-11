@@ -72,7 +72,7 @@ if st.button("Get Company Financials", key="cf_get_company_financials_btn"):
                 # --- AI Review Integration ---
                 try:
                     genai.configure(api_key=st.secrets["gemini"]["api_key"])
-                    model = genai.GenerativeModel("gemini-pro")
+                    model = genai.GenerativeModel("gemini-1.5-pro")
 
                     latest_report = company_df.iloc[0]
                     summary_text = f"""
