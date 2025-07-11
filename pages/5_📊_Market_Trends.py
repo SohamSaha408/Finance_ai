@@ -41,7 +41,7 @@ if st.button("Get Market Data", key="mt_get_market_data_btn"):
                         "data_summary": "No data found."
                     }
                     # Line 43: This 'return' statement MUST be indented at the same level as the 'st.warning' and 'if 'ai_summary_data' not in st.session_state:' lines above it.
-                return
+return
 
                 # ONLY proceed with data processing if data is NOT empty
                 st.write("--- Raw Data Fetched (Head) ---")
