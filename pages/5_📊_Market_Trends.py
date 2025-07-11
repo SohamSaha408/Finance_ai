@@ -2,87 +2,172 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
-import numpy as np # Make sure numpy is imported for np.isnan
+import numpy as np # Used for checking Not-a-Number (NaN) values
+
+st.set_page_config(page_title="Market Trends Data", page_icon="📊")
 
 st.title("📊 Market Trends Data (Raw Data Only)")
-st.markdown("<p style='font-size: 1.1rem;'>View raw historical data for Nifty 50 or other stock/index symbols.</p>", unsafe_allow_html=True)
+st.markdown("""
+    <p style='font-size: 1.1rem;'>
+        Fetch and view historical raw data for stock indices or individual company stocks.
+    </p>
+    """, unsafe_allow_html=True)
 st.info("Hint: For **Nifty 50**, use ticker `^NSEI`. For **Reliance Industries**, use `RELIANCE.NS`. For **Apple**, use `AAPL`.")
 
+# --- User Inputs ---
 market_ticker = st.text_input(
-    "Enter Stock/Index Ticker Symbol (e.g., ^NSEI, RELIANCE.NS):",
+    "Enter Stock/Index Ticker Symbol (e.g., ^NSEI, RELIANCE.NS, AAPL):",
     value="^NSEI", # Default to Nifty 50
-    key="mt_market_ticker_input"
-).strip().upper()
+    key="market_trends_ticker_input"
+).strip().upper() # Clean input: remove whitespace and convert to uppercase
 
-# Set default start date to 1 year ago and end date to today
-end_date = datetime.now().date()
-start_date = end_date - timedelta(days=365)
+# Set default date range: 1 year prior to today
+current_date = datetime.now().date()
+default_start_date = current_date - timedelta(days=365)
 
 col1, col2 = st.columns(2)
 with col1:
-    chart_start_date = st.date_input("Start Date", value=start_date, key="mt_chart_start_date")
+    start_date = st.date_input("Start Date", value=default_start_date, key="market_trends_start_date")
 with col2:
-    chart_end_date = st.date_input("End Date", value=end_date, key="mt_chart_end_date")
+    end_date = st.date_input("End Date", value=current_date, key="market_trends_end_date")
 
-if st.button("Get Market Data", key="mt_get_market_data_btn"):
-    if market_ticker:
-        with st.spinner(f"Fetching historical data for {market_ticker}..."):
-            try:
-                data = yf.download(market_ticker, start=chart_start_date, end=chart_end_date)
+# --- Fetch Data Button ---
+if st.button("Get Market Data", key="get_market_data_button"):
+    if not market_ticker:
+        st.warning("Please enter a ticker symbol to fetch market data.")
+        st.session_state['ai_summary_data'] = {'Market Trend Visualization': {'status': 'No ticker entered'}}
+        st.stop() # Stop execution if no ticker
 
-                # --- CRITICAL FIX: Ensure this entire 'if' block has correct indentation ---
-                if data.empty: # This 'if' block starts here
-                    st.warning(f"No historical data found for '{market_ticker}' in the specified date range ({chart_start_date} to {chart_end_date}). This could be due to an incorrect ticker, an unsupported date range, or no trading activity.")
-                    if 'ai_summary_data' not in st.session_state:
-                        st.session_state['ai_summary_data'] = {}
-                    st.session_state['ai_summary_data']['Market Trend Visualization'] = {
-                        "ticker": market_ticker,
-                        "date_range": f"{chart_start_date} to {chart_end_date}",
-                        "data_summary": "No data found."
-                    }
-                    # Line 43: This 'return' statement MUST be indented at the same level as the 'st.warning' and 'if 'ai_summary_data' not in st.session_state:' lines above it.
-                    return
+    if start_date >= end_date:
+        st.error("Error: Start date must be before end date. Please adjust the dates.")
+        st.session_state['ai_summary_data'] = {'Market Trend Visualization': {'status': 'Invalid date range'}}
+        st.stop() # Stop execution for invalid date range
 
-                # ONLY proceed with data processing if data is NOT empty
-                st.write("--- Raw Data Fetched (Head) ---")
-                for col in ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']:
-                    if col in data.columns:
-                        data[col] = pd.to_numeric(data[col], errors='coerce')
-                        data[col] = data[col].fillna(0)
+    # --- Data Fetching and Display Logic ---
+    with st.spinner(f"Fetching historical data for {market_ticker} from {start_date} to {end_date}..."):
+        try:
+            # Download data using yfinance
+            data = yf.download(market_ticker, start=start_date, end=end_date)
 
-                st.dataframe(data.head())
-                st.write("--- Raw Data Fetched (Tail) ---")
-                st.dataframe(data.tail())
-                st.write("-----------------------------")
+            # Check if the DataFrame is empty (no data found)
+            if data.empty:
+                st.warning(
+                    f"No historical data found for '{market_ticker}' in the specified date range "
+                    f"({start_date} to {end_date}). This could be due to an incorrect ticker, "
+                    "an unsupported date range (e.g., future dates or very new listings), or no trading activity "
+                    "(e.g., holidays, weekends)."
+                )
+                # Update AI summary for no data scenario
+                if 'ai_summary_data' not in st.session_state:
+                    st.session_state['ai_summary_data'] = {}
+                st.session_state['ai_summary_data']['Market Trend Visualization'] = {
+                    "ticker": market_ticker,
+                    "date_range": f"{start_date} to {end_date}",
+                    "data_summary": "No data found.",
+                    "status": "Success (No data)"
+                }
+                st.stop() # Stop further execution if no data is found
 
-                first_open = data['Open'].iloc[0] if not data['Open'].empty else None
-                last_close = data['Close'].iloc[-1] if not data['Close'].empty else None
-                max_high = data['High'].max() if not data['High'].empty else None
-                min_low = data['Low'].min() if not data['Low'].empty else None
+            # Clean and prepare data for display and calculations
+            for col in ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']:
+                if col in data.columns:
+                    data[col] = pd.to_numeric(data[col], errors='coerce') # Convert to numeric, errors become NaN
+                    data[col] = data[col].fillna(0) # Fill NaN values with 0 for consistent calculations
 
-                summary_parts = [f"Fetched {len(data)} data points."]
-                summary_parts.append(f"Start Open: {first_open:.2f}" if first_open is not None and not np.isnan(first_open) else "Start Open: N/A")
-                summary_parts.append(f"End Close: {last_close:.2f}" if last_close is not None and not np.isnan(last_close) else "End Close: N/A")
-                summary_parts.append(f"Max High: {max_high:.2f}" if max_high is not None and not np.isnan(max_high) else "Max High: N/A")
-                summary_parts.append(f"Min Low: {min_low:.2f}" if min_low is not None and not np.isnan(min_low) else "Min Low: N/A")
+            st.subheader(f"Raw Data for {market_ticker}")
+            st.write("--- Head ---")
+            st.dataframe(data.head())
+            st.write("--- Tail ---")
+            st.dataframe(data.tail())
+            st.write("-----------------------------")
+
+            # --- Display Key Metrics ---
+            st.subheader("Key Performance Metrics")
+            if not data.empty:
+                first_open = data['Open'].iloc[0]
+                last_close = data['Close'].iloc[-1]
+                max_high = data['High'].max()
+                min_low = data['Low'].min()
+                total_volume = data['Volume'].sum()
+
+                # Robust formatting to handle potential NaN values after fillna(0)
+                # np.isnan is crucial here as fillna(0) might still leave NaNs if original data was not numeric
+                fo_str = f"{first_open:.2f}" if first_open is not None and not np.isnan(first_open) else "N/A"
+                lc_str = f"{last_close:.2f}" if last_close is not None and not np.isnan(last_close) else "N/A"
+                mh_str = f"{max_high:.2f}" if max_high is not None and not np.isnan(max_high) else "N/A"
+                ml_str = f"{min_low:.2f}" if min_low is not None and not np.isnan(min_low) else "N/A"
+                tv_str = f"{total_volume:,.0f}" if total_volume is not None and not np.isnan(total_volume) else "N/A"
+
+
+                # Display metrics in columns
+                metric_col1, metric_col2, metric_col3, metric_col4, metric_col5 = st.columns(5)
+                with metric_col1:
+                    st.metric("Start Open", fo_str)
+                with metric_col2:
+                    st.metric("End Close", lc_str)
+                with metric_col3:
+                    st.metric("Max High", mh_str)
+                with metric_col4:
+                    st.metric("Min Low", ml_str)
+                with metric_col5:
+                    st.metric("Total Volume", tv_str)
+
+                # Optional: Simple price change calculation
+                if first_open and last_close and not np.isnan(first_open) and not np.isnan(last_close) and first_open != 0:
+                    price_change_pct = ((last_close - first_open) / first_open) * 100
+                    st.metric("Price Change (%)", f"{price_change_pct:.2f}%", delta=f"{price_change_pct:.2f}%")
+                else:
+                    st.info("Cannot calculate percentage change (insufficient data or start price is zero).")
+
+
+                # --- Prepare data for AI Summary ---
+                summary_parts = [
+                    f"Fetched {len(data)} data points for {market_ticker} from {start_date} to {end_date}.",
+                    f"Start Open: {fo_str}",
+                    f"End Close: {lc_str}",
+                    f"Max High: {mh_str}",
+                    f"Min Low: {ml_str}",
+                    f"Total Volume: {tv_str}"
+                ]
+                if first_open and last_close and not np.isnan(first_open) and not np.isnan(last_close) and first_open != 0:
+                     summary_parts.append(f"Percentage Change: {price_change_pct:.2f}%")
 
                 if 'ai_summary_data' not in st.session_state:
                     st.session_state['ai_summary_data'] = {}
                 st.session_state['ai_summary_data']['Market Trend Visualization'] = {
                     "ticker": market_ticker,
-                    "date_range": f"{chart_start_date} to {chart_end_date}",
-                    "data_summary": ", ".join(summary_parts)
+                    "date_range": f"{start_date} to {end_date}",
+                    "data_summary": ", ".join(summary_parts),
+                    "status": "Success"
                 }
 
-            except Exception as e:
-                st.error(f"An error occurred while fetching market data for {market_ticker}: {e}. Please ensure the ticker is correct and try again with a valid date range.")
+            else:
+                st.warning("No data available to display metrics.")
                 if 'ai_summary_data' not in st.session_state:
                     st.session_state['ai_summary_data'] = {}
                 st.session_state['ai_summary_data']['Market Trend Visualization'] = {
                     "ticker": market_ticker,
-                    "date_range": f"{chart_start_date} to {chart_end_date}",
-                    "data_summary": f"Error during fetch: {e}"
+                    "date_range": f"{start_date} to {end_date}",
+                    "data_summary": "Dataframe became empty after processing (e.g., all NaNs).",
+                    "status": "Success (Empty after process)"
                 }
-    else:
-        st.warning("Please enter a ticker symbol to fetch market trends.")
-st.markdown("---")
+
+
+        except Exception as e:
+            # Catch any unexpected errors during the process
+            st.error(f"An unexpected error occurred while fetching or processing market data for {market_ticker}: {e}. Please check the ticker symbol, date range, or your internet connection.")
+            # Update AI summary for error scenario
+            if 'ai_summary_data' not in st.session_state:
+                st.session_state['ai_summary_data'] = {}
+            st.session_state['ai_summary_data']['Market Trend Visualization'] = {
+                "ticker": market_ticker,
+                "date_range": f"{start_date} to {end_date}",
+                "data_summary": f"Error during fetch/process: {e}",
+                "status": "Error"
+            }
+    st.markdown("---")
+else:
+    # Initial load message or instruction
+    st.info("Enter a stock or index ticker symbol and select a date range, then click 'Get Market Data' to view historical information.")
+
+st.markdown("---") # Visual separator at the bottom of the page
