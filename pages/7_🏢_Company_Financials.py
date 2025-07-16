@@ -17,7 +17,7 @@ st.markdown("""
 # --- Configure Gemini API (moved to top for efficiency) ---
 try:
     genai.configure(api_key=st.secrets["gemini"]["api_key"])
-    model = genai.GenerativeModel("gemini-1.5-pro")
+    model = genai.GenerativeModel("gemini-1.5-flash")
 except KeyError:
     st.error("Gemini API key not found in secrets. Add `gemini.api_key` to `.streamlit/secrets.toml`.")
     st.stop() # Stop execution if API key is missing
