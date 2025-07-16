@@ -52,18 +52,16 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
                 st.stop() # Stop further execution if no data
 
             # Ensure numeric columns are clean (useful for robustness)
-            # This step helps ensure Plotly receives valid numeric data
             required_cols = ['Open', 'High', 'Low', 'Close']
             for col in required_cols + ['Adj Close', 'Volume']:
                 if col in data.columns:
                     data[col] = pd.to_numeric(data[col], errors='coerce')
                     # Fill NaNs specifically for plotting to avoid errors.
-                    # Consider using forward/backward fill for actual analysis, but 0 is fine for chart display if missing.
                     data[col] = data[col].fillna(0) # Fill any NaNs with 0
 
             # --- CRITICAL VALIDATION 2: Check if required columns have valid data ---
-            # After converting to numeric and filling NaNs, ensure the columns aren't all zeros/N/A
-            if not all(col in data.columns and not data[col].isnull().all() for col in required_cols):
+            # This checks if the columns exist AND are not entirely NaN/zero after cleaning
+            if not all(col in data.columns and not data[col].isnull().all() and (data[col] != 0).any() for col in required_cols):
                  st.warning(f"Insufficient valid data in required columns (Open, High, Low, Close) for {NIFTY_TICKER} to plot a chart. This might happen if all values are zero or missing after data cleaning.")
                  if 'ai_summary_data' not in st.session_state:
                     st.session_state['ai_summary_data'] = {}
