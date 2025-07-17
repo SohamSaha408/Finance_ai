@@ -2,168 +2,100 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
-import numpy as np
-import plotly.graph_objects as go
 
 # --- Streamlit Page Configuration ---
-st.set_page_config(page_title="Nifty 50 Chart", page_icon="📈")
+st.set_page_config(page_title="Market Trends Data", page_icon="📈")
 
-st.title("📈 Nifty 50 Price Trend") # Changed title for line graph
+st.title("📈 Market Trends Data (Raw Data Only)")
 st.markdown("""
     <p style='font-size: 1.1rem;'>
-        Visualize the historical closing price trend of the Nifty 50 index.
+        View raw historical data for Nifty 50 or other stock/index symbols.
     </p>
     """, unsafe_allow_html=True)
 
-# --- Define the Nifty 50 Ticker ---
-NIFTY_TICKER = "^NSEI" # Standard ticker for Nifty 50
+st.info("Hint: For Nifty 50, use ticker `^NSEI`. For Reliance Industries, use `RELIANCE.NS`. For Apple, use `AAPL`.")
 
-# --- Date Range Selection ---
+# --- User Input ---
+ticker_symbol = st.text_input(
+    "Enter Stock/Index Ticker Symbol (e.g., ^NSEI, RELIANCE.NS):",
+    value="^NSEI",
+    key="market_trend_ticker_input"
+).strip().upper() # Ensure consistent format
+
 end_date = datetime.now().date()
 start_date = end_date - timedelta(days=365) # Default to 1 year ago
 
 col1, col2 = st.columns(2)
 with col1:
-    chart_start_date = st.date_input("Start Date", value=start_date, key="nifty_chart_start_date")
+    chart_start_date = st.date_input("Start Date", value=start_date, key="market_trend_start_date")
 with col2:
-    chart_end_date = st.date_input("End Date", value=end_date, key="nifty_chart_end_date")
+    chart_end_date = st.date_input("End Date", value=end_date, key="market_trend_end_date")
 
-# --- Fetch and Display Chart Button ---
-if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
-    if chart_start_date >= chart_end_date:
-        st.error("Error: Start date must be before end date. Please adjust the dates.")
-        st.stop()
+# --- Fetch Market Data Function ---
+@st.cache_data(ttl=3600) # Cache data for 1 hour
+def fetch_market_data(ticker, start, end):
+    """
+    Fetches historical market data for a given ticker from yfinance.
+    Includes robust error handling and data type conversion.
+    """
+    if not ticker:
+        st.error("Please enter a ticker symbol.")
+        return None
 
-    with st.spinner(f"Fetching historical data for Nifty 50 ({NIFTY_TICKER})..."):
-        try:
-            # --- DEBUGGING STAGE 1: Before yf.download ---
-            st.info("Debugging Stage 1: Initiating data fetch.")
-            st.write(f"Fetching Ticker: **{NIFTY_TICKER}**")
-            st.write(f"Requested Start Date: **{chart_start_date}**")
-            st.write(f"Requested End Date: **{chart_end_date}**")
+    if start >= end:
+        st.error("Start date must be before end date.")
+        return None
 
-            # Fetch data using yfinance
-            data = yf.download(NIFTY_TICKER, start=chart_start_date, end=chart_end_date)
+    try:
+        data = yf.download(ticker, start=start, end=end)
 
-            # --- DEBUGGING STAGE 2: After yf.download, before any validation ---
-            st.info("Debugging Stage 2: Data fetched from yfinance.")
-            st.write(f"Type of 'data' object: **{type(data)}**")
-            st.write(f"Is 'data' DataFrame empty? **{data.empty}**")
+        if data.empty:
+            st.warning(f"No historical data found for '{ticker}' in the specified date range ({start} to {end}). This could be due to an incorrect ticker, an unsupported date range, or no trading activity.")
+            return None
 
-            if isinstance(data, pd.DataFrame):
-                st.write(f"Columns in 'data': **{data.columns.tolist()}**")
-                st.write(f"Shape of 'data' DataFrame: **{data.shape}**")
-                if not data.empty:
-                    st.write("Head of 'data' DataFrame:")
-                    st.dataframe(data.head()) # Display as dataframe
-                else:
-                    st.write("DataFrame is empty after yf.download.")
+        # --- Robust Data Type Handling for 'Close' (and other columns if needed) ---
+        # yfinance can sometimes return single-column data as DataFrame instead of Series.
+        # This loop ensures all relevant columns are Series and numeric.
+        for col in ['Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']:
+            if col in data.columns:
+                # If it's a DataFrame with one column, convert to Series
+                if isinstance(data[col], pd.DataFrame) and data[col].shape[1] == 1:
+                    data[col] = data[col].iloc[:, 0]
+                
+                # Convert to numeric, coercing errors to NaN
+                data[col] = pd.to_numeric(data[col], errors='coerce')
+        
+        # Drop rows where critical 'Close' data is NaN after conversion
+        data.dropna(subset=['Close'], inplace=True)
+
+        if data.empty:
+            st.warning(f"No valid data points for '{ticker}' after cleaning (e.g., all 'Close' values were non-numeric).")
+            return None
+
+        return data
+
+    except Exception as e:
+        # This catches general errors during data fetching (e.g., network issues, invalid ticker)
+        st.error(f"An unexpected error occurred while fetching or processing market data for {ticker}: {e}. Please check the ticker symbol, date range, or your internet connection.")
+        return None
+
+# --- Main Logic to Display Data ---
+if st.button("Get Market Data", key="get_market_data_btn"):
+    with st.spinner(f"Fetching raw data for {ticker_symbol}..."):
+        market_data = fetch_market_data(ticker_symbol, chart_start_date, chart_end_date)
+
+        if market_data is not None:
+            if not market_data.empty:
+                st.subheader("--- Raw Data Fetched (Head) ---")
+                st.dataframe(market_data.head()) # Show the head of the DataFrame
+
+                st.subheader("--- Raw Data Fetched (Tail) ---")
+                st.dataframe(market_data.tail()) # Show the tail of the DataFrame
+
+                st.subheader("--- Raw Data Fetched (Full) ---")
+                st.dataframe(market_data) # Show the full DataFrame (Streamlit handles large tables gracefully)
             else:
-                st.error("Error: yf.download did not return a Pandas DataFrame.")
-                # This suggests a critical failure in yfinance itself.
-                st.stop()
-
-            # --- CRITICAL VALIDATION 1: Check if DataFrame is empty ---
-            if data.empty:
-                st.warning(f"No historical data found for Nifty 50 in the specified date range ({chart_start_date} to {chart_end_date}). This could be due to no trading activity on selected dates (e.g., holidays).")
-                st.stop() # Stop further execution if no data
-
-            # --- DEBUGGING STAGE 3: After initial empty check, before Close column check ---
-            st.info("Debugging Stage 3: DataFrame is not empty. Checking 'Close' column.")
-            st.write(f"'Close' column exists? {'Close' in data.columns}")
-
-            # Ensure 'Close' column exists and is numeric
-            if 'Close' not in data.columns:
-                st.error("Error: 'Close' price column not found in fetched data. Cannot plot the trend.")
-                st.stop()
-
-            # --- DEBUGGING STAGE 4: Before and after pd.to_numeric and dropna ---
-            st.info("Debugging Stage 4: Processing 'Close' column.")
-
-            # *** THE FIX IS HERE ***
-            # Ensure 'data['Close']' is a Series, not a DataFrame, before processing.
-            # If 'data['Close']' returns a DataFrame with a single column, .iloc[:, 0]
-            # will convert it to a Series. If it's already a Series, it'll work fine.
-            if isinstance(data['Close'], pd.DataFrame) and data['Close'].shape[1] == 1:
-                close_series = data['Close'].iloc[:, 0]
-            else:
-                close_series = data['Close'] # It's already a Series, or multiple columns (error, but handle gracefully)
-
-
-            st.write(f"Type of 'close_series' before to_numeric: **{type(close_series)}**")
-            if not close_series.empty:
-                st.write(f"First 5 'Close' values before to_numeric: **{close_series.head().tolist()}**")
-            
-            close_series = pd.to_numeric(close_series, errors='coerce')
-            st.write(f"Type of 'close_series' after to_numeric: **{type(close_series)}**")
-            if not close_series.empty:
-                st.write(f"First 5 'Close' values after to_numeric: **{close_series.head().tolist()}**")
-
-            # Update the 'Close' column in the main DataFrame with the processed Series
-            data['Close'] = close_series
-
-            data.dropna(subset=['Close'], inplace=True) # Remove rows where 'Close' is NaN
-            st.write(f"Is 'data[\"Close\"]' empty after dropna? **{data['Close'].empty}**")
-
-
-            if data['Close'].empty:
-                st.warning("No valid 'Close' price data available for plotting after cleaning.")
-                st.stop()
-
-            # --- DEBUGGING STAGE 5: Final check before plotting ---
-            st.info("Debugging Stage 5: Data ready for plotting.")
-            st.write(f"Type of data.index: **{type(data.index)}**")
-            st.write(f"Length of data.index: **{len(data.index)}**")
-            if not data.index.empty:
-                st.write(f"First 5 elements of data.index: **{data.index[:5].tolist()}**")
-            
-            st.write(f"Type of data['Close']: **{type(data['Close'])}**")
-            st.write(f"Length of data['Close']: **{len(data['Close'])}**")
-            if not data['Close'].empty:
-                st.write(f"First 5 elements of data['Close']: **{data['Close'].head().tolist()}**")
-
-            # --- Line Chart Generation ---
-            st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
-
-            fig = go.Figure(data=[go.Scatter(x=data.index, y=data['Close'], mode='lines', name='Nifty 50 Close')])
-
-            fig.update_layout(
-                title=f'{NIFTY_TICKER} Closing Price Trend',
-                xaxis_rangeslider_visible=True,
-                xaxis_title="Date",
-                yaxis_title="Closing Price (INR)",
-                height=600,
-                template="plotly_dark"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            # Optional: Display a snippet of the fetched data
-            st.subheader("Raw Data Sample")
-            st.dataframe(data.tail())
-
-            # Optional: Update session state for AI summary if needed
-            if 'ai_summary_data' not in st.session_state:
-                st.session_state['ai_summary_data'] = {}
-            st.session_state['ai_summary_data']['Nifty 50 Chart'] = {
-                "ticker": NIFTY_TICKER,
-                "date_range": f"{chart_start_date} to {chart_end_date}",
-                "chart_status": "Chart generated successfully.",
-                "data_points": len(data)
-            }
-
-
-        except Exception as e:
-            # This general exception catches any error not specifically handled
-            st.error(f"An error occurred while fetching or plotting Nifty 50 data: {e}. Please try again.")
-            st.info("Please copy the full error message and any debugging info shown above this error message.")
-            if 'ai_summary_data' not in st.session_state:
-                st.session_state['ai_summary_data'] = {}
-            st.session_state['ai_summary_data']['Nifty 50 Chart'] = {
-                "ticker": NIFTY_TICKER,
-                "date_range": f"{chart_start_date} to {chart_end_date}",
-                "chart_status": f"Error: {e}"
-            }
-else:
-    st.info("Select a date range and click 'Get Nifty 50 Chart' to view the closing price trend.")
+                st.warning("No data found or all data removed after cleaning.")
+        # Error messages are handled inside fetch_market_data function already
 
 st.markdown("---")
