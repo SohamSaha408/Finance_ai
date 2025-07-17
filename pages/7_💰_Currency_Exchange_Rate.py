@@ -110,8 +110,10 @@ def fetch_and_calculate_exchange_rate(base_curr, quote_curr, start, end):
 
     # Merge all fetched data onto a common date index
     for ticker, series in fetched_raw_data.items():
-        # CORRECTED LINE: Use name=ticker to rename the Series
-        data = data.join(series.rename(name=ticker))
+        # *** THIS IS THE CRITICAL FIX ***
+        # Assign the name directly to the Series before joining
+        series.name = ticker
+        data = data.join(series)
 
     # Drop dates where any required data is missing for calculation
     data.dropna(inplace=True)
