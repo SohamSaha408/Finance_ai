@@ -2,6 +2,43 @@ import streamlit as st
 import pandas as pd
 import requests # Make sure requests is installed (pip install requests)
 
+import streamlit as st
+import base64
+
+# --- Function to get base64 encoded image ---
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# --- Path to your background image ---
+# IMPORTANT: Make sure 'black-particles-background.avif' is in the correct directory
+# relative to where your Streamlit app is run from.
+# For example, if it's in a subfolder named 'images', the path would be "images/black-particles-background.avif".
+background_image_path = "black-particles-background.avif" # Updated path
+
+# --- Get the base64 encoded string and inject CSS ---
+try:
+    encoded_image = get_base64_image(background_image_path)
+    background_css = f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/avif;base64,{encoded_image}"); /* Changed mime type to avif */
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    </style>
+    """
+    st.markdown(background_css, unsafe_allow_html=True)
+except FileNotFoundError:
+    st.error(f"Error: Background image not found at '{background_image_path}'. Please check the path for this page.")
+except Exception as e:
+    st.error(f"An error occurred while setting the background image for this page: {e}")
+
+# --- Your page-specific content starts here ---
+# (e.g., st.title, st.write, input widgets, charts, etc.)
+
 st.title("📰 Latest Financial News")
 st.markdown("<p style='font-size: 1.1rem;'>Current top financial headlines from around the world.</p>", unsafe_allow_html=True)
 
