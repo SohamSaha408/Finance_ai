@@ -10,7 +10,7 @@ def get_base64_image(image_path):
 
 # --- Path to your background image ---
 # IMPORTANT: Change this to your actual image path!
-background_image_path = "images/my_background.jpg" # Example: if your image is in an 'images' folder
+background_image_path = "black-particles-background.avif" # Example: if your image is in an 'images' folder
 
 # --- Get the base64 encoded string and inject CSS ---
 try:
