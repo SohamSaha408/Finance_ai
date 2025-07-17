@@ -2,6 +2,49 @@ import streamlit as st
 import base64
 import os
 
+
+# --- Function to get base64 encoded image ---
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# --- Path to your background image ---
+# IMPORTANT: Change this to your actual image path!
+background_image_path = "images/my_background.jpg" # Example: if your image is in an 'images' folder
+
+# --- Get the base64 encoded string and inject CSS ---
+try:
+    encoded_image = get_base64_image(background_image_path)
+    background_css = f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/jpeg;base64,{encoded_image}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    </style>
+    """
+    st.markdown(background_css, unsafe_allow_html=True)
+except FileNotFoundError:
+    st.error(f"Error: Background image not found at '{background_image_path}'. Please check the path.")
+except Exception as e:
+    st.error(f"An error occurred while setting the background image: {e}")
+
+# --- Your existing Streamlit app code for the home page starts here ---
+# This includes st.set_page_config, st.title, st.write, etc.
+
+st.set_page_config(
+    page_title="My Financial App",
+    page_icon="💰",
+    layout="centered"
+)
+
+st.title("Welcome to Your Financial AI Dashboard!")
+st.write("Explore various financial tools and insights using the navigation on the sidebar.")
+
+# ... rest of your Home.py content
 # IMPORTANT: st.set_page_config MUST be the first Streamlit command
 st.set_page_config(page_title="AI Financial Advisor", layout="centered")
 
