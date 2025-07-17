@@ -8,10 +8,10 @@ import plotly.graph_objects as go
 # --- Streamlit Page Configuration ---
 st.set_page_config(page_title="Nifty 50 Chart", page_icon="📈")
 
-st.title("📈 Nifty 50 Candlestick Chart")
+st.title("📈 Nifty 50 Price Trend") # Changed title for line graph
 st.markdown("""
     <p style='font-size: 1.1rem;'>
-        Visualize the historical price movements of the Nifty 50 index with an interactive candlestick chart.
+        Visualize the historical closing price trend of the Nifty 50 index.
     </p>
     """, unsafe_allow_html=True)
 
@@ -51,41 +51,29 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
                 }
                 st.stop() # Stop further execution if no data
 
-            # Ensure numeric columns are clean (useful for robustness)
-            required_cols = ['Open', 'High', 'Low', 'Close']
-            for col in required_cols + ['Adj Close', 'Volume']:
-                if col in data.columns:
-                    data[col] = pd.to_numeric(data[col], errors='coerce')
-                    # Fill NaNs specifically for plotting to avoid errors.
-                    data[col] = data[col].fillna(0) # Fill any NaNs with 0
+            # Ensure 'Close' column exists and is numeric
+            if 'Close' not in data.columns:
+                st.error("Error: 'Close' price column not found in fetched data. Cannot plot the trend.")
+                st.stop()
 
-            # --- CRITICAL VALIDATION 2: Check if required columns have valid data ---
-            # This checks if the columns exist AND are not entirely NaN/zero after cleaning
-            if not all(col in data.columns and not data[col].isnull().all() and (data[col] != 0).any() for col in required_cols):
-                 st.warning(f"Insufficient valid data in required columns (Open, High, Low, Close) for {NIFTY_TICKER} to plot a chart. This might happen if all values are zero or missing after data cleaning.")
-                 if 'ai_summary_data' not in st.session_state:
-                    st.session_state['ai_summary_data'] = {}
-                 st.session_state['ai_summary_data']['Nifty 50 Chart'] = {
-                    "ticker": NIFTY_TICKER,
-                    "date_range": f"{chart_start_date} to {chart_end_date}",
-                    "chart_status": "Insufficient valid data for plotting."
-                 }
-                 st.stop() # Stop further execution if data is invalid
+            data['Close'] = pd.to_numeric(data['Close'], errors='coerce')
+            data.dropna(subset=['Close'], inplace=True) # Remove rows where 'Close' is NaN
 
-            # --- Candlestick Chart Generation ---
-            st.subheader(f"Nifty 50 Candlestick Chart ({chart_start_date} to {chart_end_date})")
+            if data['Close'].empty:
+                st.warning("No valid 'Close' price data available for plotting after cleaning.")
+                st.stop()
 
-            fig = go.Figure(data=[go.Candlestick(x=data.index,
-                                                open=data['Open'],
-                                                high=data['High'],
-                                                low=data['Low'],
-                                                close=data['Close'])])
+            # --- Line Chart Generation ---
+            st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
+
+            # **Change:** Using go.Scatter for a line graph
+            fig = go.Figure(data=[go.Scatter(x=data.index, y=data['Close'], mode='lines', name='Nifty 50 Close')])
 
             fig.update_layout(
-                title=f'{NIFTY_TICKER} Price Chart',
-                xaxis_rangeslider_visible=False, # Hides the default range slider below the chart
+                title=f'{NIFTY_TICKER} Closing Price Trend',
+                xaxis_rangeslider_visible=True, # You might want the range slider for line charts
                 xaxis_title="Date",
-                yaxis_title="Price (INR)",
+                yaxis_title="Closing Price (INR)",
                 height=600, # Adjust chart height as needed
                 template="plotly_dark" # Use a dark theme for the chart
             )
@@ -117,6 +105,6 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
                 "chart_status": f"Error: {e}"
             }
 else:
-    st.info("Select a date range and click 'Get Nifty 50 Chart' to view the candlestick chart.")
+    st.info("Select a date range and click 'Get Nifty 50 Chart' to view the closing price trend.")
 
 st.markdown("---")
