@@ -63,10 +63,23 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
                 st.warning("No valid 'Close' price data available for plotting after cleaning.")
                 st.stop()
 
+            # --- DEBUGGING ADDITION START ---
+            st.info("Debugging Information (before plotting):")
+            st.write(f"Type of data.index: {type(data.index)}")
+            st.write(f"Length of data.index: {len(data.index)}")
+            if not data.index.empty:
+                st.write(f"First 5 elements of data.index: {data.index[:5].tolist()}")
+            
+            st.write(f"Type of data['Close']: {type(data['Close'])}")
+            st.write(f"Length of data['Close']: {len(data['Close'])}")
+            if not data['Close'].empty:
+                st.write(f"First 5 elements of data['Close']: {data['Close'].head().tolist()}")
+            # --- DEBUGGING ADDITION END ---
+
+
             # --- Line Chart Generation ---
             st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
 
-            # **Change:** Using go.Scatter for a line graph
             fig = go.Figure(data=[go.Scatter(x=data.index, y=data['Close'], mode='lines', name='Nifty 50 Close')])
 
             fig.update_layout(
