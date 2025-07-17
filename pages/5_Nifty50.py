@@ -53,7 +53,7 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
             st.write(f"Is 'data' DataFrame empty? **{data.empty}**")
 
             if isinstance(data, pd.DataFrame):
-                st.write(f"Columns in 'data': **{data.columns.tolist()}**")
+                st.write(f"Columns in 'data': **{data.columns.tolist()}**") # Show columns as list
                 st.write(f"Shape of 'data' DataFrame: **{data.shape}**")
                 if not data.empty:
                     st.write("Head of 'data' DataFrame:")
@@ -63,6 +63,16 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
             else:
                 st.error("Error: yf.download did not return a Pandas DataFrame. Cannot proceed.")
                 st.stop()
+
+            # --- CRITICAL FIX: Flatten multi-level columns if they exist ---
+            # This happens when yfinance returns data with (column_name, ticker_symbol)
+            # as column names, often if multiple tickers were requested or due to yfinance versioning.
+            if isinstance(data.columns, pd.MultiIndex):
+                # Attempt to get the lower level column names, e.g., 'Close' from ('Close', '^NSEI')
+                data.columns = [col[0] if isinstance(col, tuple) else col for col in data.columns]
+                st.info("Detected and flattened multi-level column index.")
+                st.write(f"New Columns after flattening: **{data.columns.tolist()}**")
+
 
             # --- CRITICAL VALIDATION 1: Check if DataFrame is empty ---
             if data.empty:
@@ -75,16 +85,14 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
 
             # Ensure 'Close' column exists
             if 'Close' not in data.columns:
-                st.error("Error: 'Close' price column not found in fetched data. Cannot plot the trend.")
+                st.error("Error: 'Close' price column not found in fetched data. Cannot plot the trend. Available columns: " + ", ".join(data.columns.tolist()))
                 st.stop()
 
             # --- DEBUGGING STAGE 4: Before and after pd.to_numeric and dropna ---
             st.info("Debugging Stage 4: Processing 'Close' column.")
 
-            # *** THE FIX FOR TypeError IS HERE ***
-            # Ensure 'data['Close']' is a Series, not a DataFrame, before processing.
-            # If 'data['Close']' returns a DataFrame with a single column, .iloc[:, 0]
-            # will convert it to a Series. If it's already a Series, it'll work fine.
+            # Ensure 'data['Close']' is a Series before processing.
+            # While previous debug showed it's Series, this is a safety for edge cases.
             close_series = data['Close']
             if isinstance(close_series, pd.DataFrame) and close_series.shape[1] == 1:
                 close_series = close_series.iloc[:, 0]
