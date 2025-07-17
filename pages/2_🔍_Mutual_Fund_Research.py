@@ -1,6 +1,42 @@
 import streamlit as st
 from advisor import search_funds # Ensure advisor.py is in the main directory
 
+import streamlit as st
+import base64
+
+# --- Function to get base64 encoded image ---
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# --- Path to your background image ---
+# IMPORTANT: Change this to your actual image path for THIS specific page!
+# If you want the SAME image on all pages, ensure this path is consistent across all pages.
+background_image_path = "black-particles-background.avif" # Example path
+
+# --- Get the base64 encoded string and inject CSS ---
+try:
+    encoded_image = get_base64_image(background_image_path)
+    background_css = f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/jpeg;base64,{encoded_image}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    </style>
+    """
+    st.markdown(background_css, unsafe_allow_html=True)
+except FileNotFoundError:
+    st.error(f"Error: Background image not found at '{background_image_path}'. Please check the path for this page.")
+except Exception as e:
+    st.error(f"An error occurred while setting the background image for this page: {e}")
+
+# --- Your page-specific content starts here ---
+# (e.g., st.title, st.write, input widgets, charts, etc.)
+
 st.title("🔍 Mutual Fund Research")
 st.markdown("<p style='font-size: 1.1rem;'>Search for mutual funds by name to get details.</p>", unsafe_allow_html=True)
 
