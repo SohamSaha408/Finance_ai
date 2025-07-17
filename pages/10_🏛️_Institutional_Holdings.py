@@ -4,6 +4,15 @@ import pandas as pd
 from datetime import datetime
 
 # --- AI Review Section for Institutional Holdings ---
+
+
+
+# --- Page Configuration ---
+st.set_page_config(page_title="Institutional Holdings", page_icon="🏛️", layout="wide")
+
+st.title("🏛️ Institutional Holdings (Form 13F Filings)")
+
+
 st.markdown("---")
 st.subheader("🤖 AI-Powered Review")
 
@@ -23,12 +32,6 @@ else:
     st.info(f"No {display_name} data available to generate an AI review. Please search for an institutional investor first.")
 
 st.markdown("---")
-
-
-# --- Page Configuration ---
-st.set_page_config(page_title="Institutional Holdings", page_icon="🏛️", layout="wide")
-
-st.title("🏛️ Institutional Holdings (Form 13F Filings)")
 st.markdown("""
     <p style='font-size: 1.1rem;'>
         Discover what major institutional investors are buying and selling.
