@@ -3,7 +3,8 @@ import pandas as pd
 import re # Make sure re is imported if you use it in extract_amount
 from advisor import generate_recommendation # Ensure advisor.py is in the main directory
 
-
+import streamlit as st
+import base64
 # --- Function to get base64 encoded image ---
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
