@@ -79,14 +79,28 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
 
             # --- DEBUGGING STAGE 4: Before and after pd.to_numeric and dropna ---
             st.info("Debugging Stage 4: Processing 'Close' column.")
-            st.write(f"Type of 'data[\"Close\"]' before to_numeric: **{type(data['Close'])}**")
-            if not data['Close'].empty:
-                st.write(f"First 5 'Close' values before to_numeric: **{data['Close'].head().tolist()}**")
+
+            # *** THE FIX IS HERE ***
+            # Ensure 'data['Close']' is a Series, not a DataFrame, before processing.
+            # If 'data['Close']' returns a DataFrame with a single column, .iloc[:, 0]
+            # will convert it to a Series. If it's already a Series, it'll work fine.
+            if isinstance(data['Close'], pd.DataFrame) and data['Close'].shape[1] == 1:
+                close_series = data['Close'].iloc[:, 0]
+            else:
+                close_series = data['Close'] # It's already a Series, or multiple columns (error, but handle gracefully)
+
+
+            st.write(f"Type of 'close_series' before to_numeric: **{type(close_series)}**")
+            if not close_series.empty:
+                st.write(f"First 5 'Close' values before to_numeric: **{close_series.head().tolist()}**")
             
-            data['Close'] = pd.to_numeric(data['Close'], errors='coerce')
-            st.write(f"Type of 'data[\"Close\"]' after to_numeric: **{type(data['Close'])}**")
-            if not data['Close'].empty:
-                st.write(f"First 5 'Close' values after to_numeric: **{data['Close'].head().tolist()}**")
+            close_series = pd.to_numeric(close_series, errors='coerce')
+            st.write(f"Type of 'close_series' after to_numeric: **{type(close_series)}**")
+            if not close_series.empty:
+                st.write(f"First 5 'Close' values after to_numeric: **{close_series.head().tolist()}**")
+
+            # Update the 'Close' column in the main DataFrame with the processed Series
+            data['Close'] = close_series
 
             data.dropna(subset=['Close'], inplace=True) # Remove rows where 'Close' is NaN
             st.write(f"Is 'data[\"Close\"]' empty after dropna? **{data['Close'].empty}**")
