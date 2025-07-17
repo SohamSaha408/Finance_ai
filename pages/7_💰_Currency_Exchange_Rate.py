@@ -92,8 +92,7 @@ def fetch_and_calculate_exchange_rate(base_curr, quote_curr, start, end):
         tickers_to_fetch.append(quote_info['ticker'])
 
     if not tickers_to_fetch and (base_curr != 'USD' and quote_curr != 'USD'):
-        # This case should ideally not happen if both non-USD currencies have tickers against USD
-        st.error(f"Cannot determine tickers for {base_curr}/{quote_curr} pair.")
+        st.error(f"Cannot determine tickers for {base_curr}/{quote_curr} pair. Ensure both have USD-based tickers defined.")
         return None
 
     fetched_raw_data = {}
@@ -103,7 +102,7 @@ def fetch_and_calculate_exchange_rate(base_curr, quote_curr, start, end):
             fetched_raw_data[ticker] = df_temp['Close']
         else:
             st.warning(f"Could not fetch data for ticker: {ticker}. This may affect the exchange rate calculation.")
-            return None # Stop if crucial data is missing
+            return None # Stop if crucial data is missing for a non-USD currency
 
     if not fetched_raw_data and (base_curr != 'USD' and quote_curr != 'USD'):
         st.warning("No data fetched for the selected non-USD currencies.")
@@ -111,7 +110,8 @@ def fetch_and_calculate_exchange_rate(base_curr, quote_curr, start, end):
 
     # Merge all fetched data onto a common date index
     for ticker, series in fetched_raw_data.items():
-        data = data.join(series.rename(ticker))
+        # CORRECTED LINE: Use name=ticker to rename the Series
+        data = data.join(series.rename(name=ticker))
 
     # Drop dates where any required data is missing for calculation
     data.dropna(inplace=True)
@@ -122,10 +122,6 @@ def fetch_and_calculate_exchange_rate(base_curr, quote_curr, start, end):
 
     # --- Calculate the target exchange rate ---
     final_rates = pd.Series(index=data.index, dtype=float)
-
-    # Convert all needed rates to CURRENCY_X / USD
-    # For example, if JPY=X gives USD/JPY, then JPY/USD = 1 / JPY=X.
-    # If EURUSD=X gives EUR/USD, then EUR/USD is simply EURUSD=X.
 
     base_rate_vs_usd = None
     if base_curr == 'USD':
