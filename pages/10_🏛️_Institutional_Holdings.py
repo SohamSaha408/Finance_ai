@@ -3,6 +3,27 @@ import requests
 import pandas as pd
 from datetime import datetime
 
+# --- AI Review Section for Institutional Holdings ---
+st.markdown("---")
+st.subheader("🤖 AI-Powered Review")
+
+page_key_in_session_state = "Institutional Holdings"
+display_name = "Institutional Holdings"
+
+current_page_data = st.session_state.get('ai_summary_data', {}).get(page_key_in_session_state, {})
+
+if current_page_data and current_page_data.get("status") == "13F filings displayed successfully.":
+    if st.button(f"Generate AI Review for {display_name}"):
+        with st.spinner("Generating AI review..."):
+            review = get_ai_review(display_name, current_page_data)
+            st.write(review)
+    else:
+        st.info(f"Click the button above to get an AI-powered summary of the {display_name} data.")
+else:
+    st.info(f"No {display_name} data available to generate an AI review. Please search for an institutional investor first.")
+
+st.markdown("---")
+
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Institutional Holdings", page_icon="🏛️", layout="wide")
@@ -166,24 +187,5 @@ else:
 
 st.markdown("---")
 
-# --- AI Review Section for Institutional Holdings ---
-st.markdown("---")
-st.subheader("🤖 AI-Powered Review")
 
-page_key_in_session_state = "Institutional Holdings"
-display_name = "Institutional Holdings"
-
-current_page_data = st.session_state.get('ai_summary_data', {}).get(page_key_in_session_state, {})
-
-if current_page_data and current_page_data.get("status") == "13F filings displayed successfully.":
-    if st.button(f"Generate AI Review for {display_name}"):
-        with st.spinner("Generating AI review..."):
-            review = get_ai_review(display_name, current_page_data)
-            st.write(review)
-    else:
-        st.info(f"Click the button above to get an AI-powered summary of the {display_name} data.")
-else:
-    st.info(f"No {display_name} data available to generate an AI review. Please search for an institutional investor first.")
-
-st.markdown("---")
 
