@@ -40,6 +40,28 @@ except Exception as e:
 
 st.title("📊 Your Personalized Investment Plan")
 
+
+st.markdown("---")
+st.subheader("🤖 AI-Powered Review")
+
+page_key_in_session_state = "Investment Plan"
+display_name = "Investment Plan"
+
+current_page_data = st.session_state.get('ai_summary_data', {}).get(page_key_in_session_state, {})
+
+# You will need to define when your Investment Plan page considers data "available"
+if current_page_data and current_page_data.get("status") == "Plan generated successfully.": # Example status, adjust as needed
+    if st.button(f"Generate AI Review for {display_name}"):
+        with st.spinner("Generating AI review..."):
+            review = get_ai_review(display_name, current_page_data)
+            st.write(review)
+    else:
+        st.info(f"Click the button above to get an AI-powered summary of the {display_name} data.")
+else:
+    st.info(f"No {display_name} data available to generate an AI review. Please generate an investment plan first.")
+
+st.markdown("---")
+
 st.markdown("<p style='font-size: 1.1rem;'>Answer a few questions to get tailored investment advice.</p>", unsafe_allow_html=True)
 
 age = st.number_input("Age", min_value=18, key="ip_age_input") # Unique key
