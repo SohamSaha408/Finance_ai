@@ -1,6 +1,6 @@
 import streamlit as st
 from advisor import search_funds # Ensure advisor.py is in the main directory
-from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
+
 
 import streamlit as st
 import base64
