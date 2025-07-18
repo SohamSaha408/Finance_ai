@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests # Make sure requests is installed (pip install requests)
-
+from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
 import streamlit as st
 import base64
 
