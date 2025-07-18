@@ -40,6 +40,10 @@ except Exception as e:
 
 st.title("📊 Your Personalized Investment Plan")
 
+st.set_page_config(page_title="Investment Plan", page_icon="📈", layout="wide")
+st.title("📈 Investment Plan")
+st.write("Generate a personalized investment plan based on your financial goals, risk tolerance, and current market conditions. This tool helps you visualize potential portfolio allocations and long-term growth strategies.")
+# ... rest of your page code ...
 
 st.markdown("---")
 st.subheader("🤖 AI-Powered Review")
