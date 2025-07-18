@@ -9,7 +9,6 @@ import google.generativeai as genai
 st.set_page_config(page_title="Nifty 50 Chart", page_icon="📈", layout="wide")
 
 # --- Placeholder for get_cik_from_company_name_rough (if get_ai_review needs it or it's a shared utility) ---
-# This is here for completeness as it might be called by get_ai_review depending on your setup.
 @st.cache_data(ttl=86400) # Cache for 24 hours
 def get_cik_from_company_name_rough(company_name):
     company_cik_map = {
