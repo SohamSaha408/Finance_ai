@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from fredapi import Fred # Make sure fredapi is installed (pip install fredapi)
-
+from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
 import streamlit as st
 import base64
 
