@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re # Make sure re is imported if you use it in extract_amount
 from advisor import generate_recommendation # Ensure advisor.py is in the main directory
+from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
 
 import streamlit as st
 import base64
