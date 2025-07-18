@@ -39,7 +39,12 @@ except Exception as e:
 # --- Your page-specific content starts here ---
 # (e.g., st.title, st.write, input widgets, charts, etc.)
 
-st.title("📈 Economic Data from FRED")
+
+
+st.set_page_config(page_title="Economic Data", page_icon="📊", layout="wide")
+st.title("📊 Economic Data")
+st.write("Access and visualize key economic indicators that influence financial markets. Explore trends in GDP, inflation, interest rates, and employment data to better understand the broader economic landscape.")
+# ... rest of your page code ...
 st.markdown("<p style='font-size: 1.1rem;'>Enter a FRED Series ID (e.g., `UNRATE` for Unemployment Rate, `GDP` for Gross Domestic Product) to view economic data.</p>", unsafe_allow_html=True)
 
 fred_series_id = st.text_input(
