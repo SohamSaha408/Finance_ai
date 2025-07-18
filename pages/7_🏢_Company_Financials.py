@@ -44,7 +44,12 @@ except Exception as e:
 # --- Streamlit Page Config ---
 st.set_page_config(page_title="Company Financials", page_icon="🏢")
 
-st.title("🏢 Company Financials (via Alpha Vantage)")
+
+
+st.set_page_config(page_title="Company Financials", page_icon="📈", layout="wide")
+st.title("📈 Company Financials")
+st.write("Dive deep into a company's financial health. Access historical income statements, balance sheets, and cash flow statements to perform fundamental analysis and assess performance.")
+# ... rest of your page code ...
 st.markdown("""
     <p style='font-size: 1.1rem;'>
         Get key financial statements (e.g., Income Statement) for publicly traded companies using their ticker symbol.
