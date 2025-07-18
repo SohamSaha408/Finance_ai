@@ -4,7 +4,7 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import numpy as np
 import plotly.graph_objects as go
-
+from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
 import streamlit as st
 import base64
 
