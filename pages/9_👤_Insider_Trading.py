@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 import streamlit as st
 import base64
-
+from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
 # --- Function to get base64 encoded image ---
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
