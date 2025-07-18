@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import google.generativeai as genai
 import numpy as np # For checking NaN values
-
+from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
 import streamlit as st
 import base64
 
