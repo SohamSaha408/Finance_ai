@@ -40,7 +40,7 @@ except Exception as e:
 st.title("🔍 Mutual Fund Research")
 
 st.set_page_config(page_title="Mutual Fund Research", page_icon="🔍", layout="wide")
-st.title("🔍 Mutual Fund Research")
+
 st.write("Explore and compare various mutual funds to find the best fit for your portfolio. Search by fund name, category, or performance metrics to gain insights into historical returns, expenses, and holdings.")
 # ... rest of your page code ...
 st.markdown("<p style='font-size: 1.1rem;'>Search for mutual funds by name to get details.</p>", unsafe_allow_html=True)
