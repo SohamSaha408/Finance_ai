@@ -39,7 +39,11 @@ except Exception as e:
 # --- Your page-specific content starts here ---
 # (e.g., st.title, st.write, input widgets, charts, etc.)
 
-st.title("📰 Latest Financial News")
+
+st.set_page_config(page_title="Financial News", page_icon="📰", layout="wide")
+st.title("📰 Financial News")
+st.write("Stay updated with the latest financial news and market headlines. Search for news related to specific companies or sectors to get real-time insights impacting your investments.")
+# ... rest of your page code ...
 st.markdown("<p style='font-size: 1.1rem;'>Current top financial headlines from around the world.</p>", unsafe_allow_html=True)
 
 def get_financial_news(query="finance OR economy OR stock market OR investing", language="en", page_size=5):
