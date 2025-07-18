@@ -45,7 +45,11 @@ except Exception as e:
 # --- Streamlit Page Configuration ---
 st.set_page_config(page_title="Nifty 50 Chart", page_icon="📈")
 
-st.title("📈 Nifty 50 Price Trend")
+
+st.set_page_config(page_title="Nifty 50 Chart", page_icon="📈", layout="wide")
+st.title("📈 Nifty 50 Historical Chart")
+st.write("View the historical performance of the Nifty 50 index. This chart provides candlestick visualization of price movements over your selected date range, helping you analyze market trends.")
+# ... rest of your page code ...
 st.markdown("""
     <p style='font-size: 1.1rem;'>
         Visualize the historical closing price trend of the Nifty 50 index.
