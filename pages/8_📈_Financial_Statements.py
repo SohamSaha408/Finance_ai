@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
-
+from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
 import streamlit as st
 import base64
 
