@@ -39,6 +39,11 @@ except Exception as e:
 # --- Your page-specific content starts here ---
 # (e.g., st.title, st.write, input widgets, charts, etc.)
 st.title("📄 Document Analyzer")
+
+st.set_page_config(page_title="Document Analyzer", page_icon="📄", layout="wide")
+
+st.write("Upload and analyze financial documents (e.g., earnings reports, prospectuses) to quickly extract key information, summarize content, and identify important insights. Leverage AI for efficient document review.")
+# ... rest of your page code ...
 st.markdown("<p style='font-size: 1.1rem;'>Upload a document (PDF or TXT) for the AI to analyze and provide insights.</p>", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("Choose a file", type=["pdf", "txt"], key="da_doc_uploader") # Unique key
