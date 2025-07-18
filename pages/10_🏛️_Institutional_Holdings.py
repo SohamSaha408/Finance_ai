@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
-from utils.styling import set_common_font # Adjust path if your utils folder is structured differently
+
 # --- Page Configuration ---
 st.set_page_config(page_title="Institutional Holdings", page_icon="🏛️", layout="wide")
 
