@@ -38,6 +38,11 @@ except Exception as e:
 # (e.g., st.title, st.write, input widgets, charts, etc.)
 
 st.title("🔍 Mutual Fund Research")
+
+st.set_page_config(page_title="Mutual Fund Research", page_icon="🔍", layout="wide")
+st.title("🔍 Mutual Fund Research")
+st.write("Explore and compare various mutual funds to find the best fit for your portfolio. Search by fund name, category, or performance metrics to gain insights into historical returns, expenses, and holdings.")
+# ... rest of your page code ...
 st.markdown("<p style='font-size: 1.1rem;'>Search for mutual funds by name to get details.</p>", unsafe_allow_html=True)
 
 search_query = st.text_input("Enter fund name to search", key="mfr_fund_search_input") # Unique key
