@@ -37,8 +37,11 @@ def authentication_gate():
             result = cursor.fetchone()
 
             if result and bcrypt.checkpw(password.encode(), result[0].encode()):
+                cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+                ser_id_result = cursor.fetchone()
                 st.session_state["logged_in"] = True
                 st.session_state["username"] = username
+                st.session_state["user_id"] = user_id_result[0] # Store the user ID
                 conn.close()
                 st.rerun()
             else:
