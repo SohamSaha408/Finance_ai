@@ -5,35 +5,64 @@ import os
 import json
 import bcrypt # <-- Make sure this import is at the top of home.py
 
-def check_password():
-    """Returns `True` if the user is logged in, `False` otherwise."""
+# --- AFTER ---
+import streamlit as st
+import json
+import bcrypt
+
+# This is the updated function. Replace your old check_password() with this.
+def authentication_gate():
+    """Handles both login and registration."""
     if st.session_state.get("logged_in", False):
         return True
 
-    st.set_page_config(page_title="Login", layout="centered")
-    st.title("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    st.set_page_config(page_title="Welcome", layout="centered")
+    st.title("Welcome to Your Financial AI Dashboard")
 
-    if st.button("Login"):
-        try:
-            with open("users.json", 'r') as f:
-                users = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            users = {}
+    # Let user choose between logging in and signing up
+    choice = st.radio("Choose an action:", ("Login", "Sign Up"))
 
-        if username in users:
-            # Check the hashed password
-            hashed_pw = users[username].encode('utf-8')
-            if bcrypt.checkpw(password.encode('utf-8'), hashed_pw):
+    # --- LOGIN LOGIC ---
+    if choice == "Login":
+        st.subheader("Login")
+        username = st.text_input("Username", key="login_username")
+        password = st.text_input("Password", type="password", key="login_password")
+
+        if st.button("Login"):
+            try:
+                with open("users.json", 'r') as f: users = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError): users = {}
+
+            if username in users and bcrypt.checkpw(password.encode(), users[username].encode()):
                 st.session_state["logged_in"] = True
                 st.session_state["username"] = username
                 st.rerun()
             else:
                 st.error("Incorrect username or password")
-        else:
-            st.error("Incorrect username or password")
-            
+
+    # --- SIGN UP LOGIC ---
+    elif choice == "Sign Up":
+        st.subheader("Create a New Account")
+        new_username = st.text_input("New Username", key="signup_username")
+        new_password = st.text_input("New Password", type="password", key="signup_password")
+
+        if st.button("Sign Up"):
+            if not new_username or not new_password:
+                st.warning("Please enter both a username and a password.")
+            else:
+                try:
+                    with open("users.json", 'r') as f: users = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError): users = {}
+
+                if new_username in users:
+                    st.error("This username is already taken. Please choose another.")
+                else:
+                    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+                    users[new_username] = hashed_pw
+                    with open("users.json", 'w') as f:
+                        json.dump(users, f, indent=4)
+                    st.success("Account created successfully! Please go to the Login tab to log in.")
+    
     return False
 
 
