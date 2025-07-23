@@ -1,12 +1,10 @@
 # db_setup.py
 import sqlite3
 
-# Connect to (or create) the database file
 conn = sqlite3.connect('users.db')
 cursor = conn.cursor()
 
-# Create the users table
-# The 'username' column is set to be unique to prevent duplicates.
+# --- Create the users table (no changes here) ---
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,8 +13,16 @@ CREATE TABLE IF NOT EXISTS users (
 )
 ''')
 
-print("Database and 'users' table created successfully.")
+# --- Add the new watchlist table ---
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS watchlist (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    ticker TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+)
+''')
 
-# Commit the changes and close the connection
+print("Database and tables created successfully.")
 conn.commit()
 conn.close()
