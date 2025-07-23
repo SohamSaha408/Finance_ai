@@ -8,8 +8,12 @@ import bcrypt
 # 1. AUTHENTICATION AND REGISTRATION LOGIC
 # This function handles the entire login/signup process.
 # =================================================================
+# In home.py, replace the entire function with this one.
+# Make sure to import sqlite3 at the top of home.py as well.
+import sqlite3
+
 def authentication_gate():
-    """Handles both login and registration."""
+    """Handles both login and registration using an SQLite database."""
     if st.session_state.get("logged_in", False):
         return True
 
@@ -18,6 +22,10 @@ def authentication_gate():
 
     choice = st.radio("Choose an action:", ("Login", "Sign Up"), horizontal=True)
 
+    # --- Database Connection ---
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
     # --- LOGIN LOGIC ---
     if choice == "Login":
         st.subheader("Login")
@@ -25,13 +33,13 @@ def authentication_gate():
         password = st.text_input("Password", type="password", key="login_password")
 
         if st.button("Login"):
-            try:
-                with open("users.json", 'r') as f: users = json.load(f)
-            except (FileNotFoundError, json.JSONDecodeError): users = {}
+            cursor.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+            result = cursor.fetchone()
 
-            if username in users and bcrypt.checkpw(password.encode(), users[username].encode()):
+            if result and bcrypt.checkpw(password.encode(), result[0].encode()):
                 st.session_state["logged_in"] = True
                 st.session_state["username"] = username
+                conn.close()
                 st.rerun()
             else:
                 st.error("Incorrect username or password")
@@ -47,18 +55,14 @@ def authentication_gate():
                 st.warning("Please enter both a username and a password.")
             else:
                 try:
-                    with open("users.json", 'r') as f: users = json.load(f)
-                except (FileNotFoundError, json.JSONDecodeError): users = {}
-
-                if new_username in users:
-                    st.error("This username is already taken. Please choose another.")
-                else:
                     hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-                    users[new_username] = hashed_pw
-                    with open("users.json", 'w') as f:
-                        json.dump(users, f, indent=4)
-                    st.success("Account created successfully! Please switch to the Login tab to log in.")
-    
+                    cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (new_username, hashed_pw))
+                    conn.commit()
+                    st.success("Account created successfully! Please go to the Login tab to log in.")
+                except sqlite3.IntegrityError:
+                    st.error("This username is already taken. Please choose another.")
+
+    conn.close()
     return False
 
 # =================================================================
