@@ -2,6 +2,9 @@ import streamlit as st
 import base64
 import os
 
+import json
+import bcrypt # <-- Make sure this import is at the top of home.py
+
 def check_password():
     """Returns `True` if the user is logged in, `False` otherwise."""
     if st.session_state.get("logged_in", False):
@@ -13,15 +16,25 @@ def check_password():
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
-        if username == "admin" and password == "1234": # Replace with your credentials
-            st.session_state["logged_in"] = True
-            st.session_state["username"] = username
-            st.rerun()
+        try:
+            with open("users.json", 'r') as f:
+                users = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            users = {}
+
+        if username in users:
+            # Check the hashed password
+            hashed_pw = users[username].encode('utf-8')
+            if bcrypt.checkpw(password.encode('utf-8'), hashed_pw):
+                st.session_state["logged_in"] = True
+                st.session_state["username"] = username
+                st.rerun()
+            else:
+                st.error("Incorrect username or password")
         else:
             st.error("Incorrect username or password")
             
     return False
-
 
 
 # --- Function to get base64 encoded image ---
