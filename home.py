@@ -2,6 +2,27 @@ import streamlit as st
 import base64
 import os
 
+def check_password():
+    """Returns `True` if the user is logged in, `False` otherwise."""
+    if st.session_state.get("logged_in", False):
+        return True
+
+    st.set_page_config(page_title="Login", layout="centered")
+    st.title("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if username == "admin" and password == "1234": # Replace with your credentials
+            st.session_state["logged_in"] = True
+            st.session_state["username"] = username
+            st.rerun()
+        else:
+            st.error("Incorrect username or password")
+            
+    return False
+
+
 
 # --- Function to get base64 encoded image ---
 def get_base64_image(image_path):
@@ -34,6 +55,27 @@ except Exception as e:
 
 # --- Your existing Streamlit app code for the home page starts here ---
 # This includes st.set_page_config, st.title, st.write, etc.
+if check_password():
+
+    # --- Add the Logout button to the sidebar ---
+    st.sidebar.write(f"Welcome, {st.session_state['username']}!")
+    if st.sidebar.button("Logout"):
+        st.session_state["logged_in"] = False
+        st.rerun()
+
+    # --- Your original app's main body (NOW INDENTED) ---
+    st.set_page_config(
+        page_title="My Financial App",
+        page_icon="💰",
+        layout="centered"
+    )
+    set_background("black-particles-background.avif")
+    st.title("💸 Welcome to Your AI Financial Advisor")
+    st.markdown("""
+    <p style='font-size: 1.2rem;'>
+        Your intelligent partner for all things finance!
+    </p>
+    """, unsafe_allow_html=True)
 
 st.set_page_config(
     page_title="My Financial App",
