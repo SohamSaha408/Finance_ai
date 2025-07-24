@@ -9,4 +9,6 @@ fredapi>=0.5.0
 tabulate>=0.9.0
 plotly
 bcrypt
+streamlit-audiorecorder 
+SpeechRecognition
 
