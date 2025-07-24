@@ -3,28 +3,35 @@ import base64
 import os
 import json
 import bcrypt
-
-# =================================================================
-# 1. AUTHENTICATION AND REGISTRATION LOGIC
-# This function handles the entire login/signup process.
-# =================================================================
-# In home.py, replace the entire function with this one.
-# Make sure to import sqlite3 at the top of home.py as well.
 import sqlite3
 
+# =================================================================
+# 1. PAGE CONFIGURATION (MUST BE THE FIRST STREAMLIT COMMAND)
+# =================================================================
+st.set_page_config(
+    page_title="Financial Advisor",
+    page_icon="💸",
+    layout="centered" 
+)
+
+# =================================================================
+# 2. AUTHENTICATION AND REGISTRATION LOGIC
+# =================================================================
 def authentication_gate():
     """Handles both login and registration using an SQLite database."""
     if st.session_state.get("logged_in", False):
         return True
 
-    st.set_page_config(page_title="Welcome", layout="centered")
     st.title("Welcome to Your Financial AI Dashboard")
 
     choice = st.radio("Choose an action:", ("Login", "Sign Up"), horizontal=True)
 
-    # --- Database Connection ---
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
+    try:
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+    except sqlite3.Error as e:
+        st.error(f"Database error: {e}")
+        return False
 
     # --- LOGIN LOGIC ---
     if choice == "Login":
@@ -36,12 +43,14 @@ def authentication_gate():
             cursor.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
             result = cursor.fetchone()
 
-            if result and bcrypt.checkpw(password.encode(), result[0].encode()):
+            if result and bcrypt.checkpw(password.encode(), result[0]):
                 cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
-                ser_id_result = cursor.fetchone()
+                # FIXED THE TYPO HERE
+                user_id_result = cursor.fetchone()
+                
                 st.session_state["logged_in"] = True
                 st.session_state["username"] = username
-                st.session_state["user_id"] = user_id_result[0] # Store the user ID
+                st.session_state["user_id"] = user_id_result[0]
                 conn.close()
                 st.rerun()
             else:
@@ -58,23 +67,24 @@ def authentication_gate():
                 st.warning("Please enter both a username and a password.")
             else:
                 try:
-                    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+                    hashed_pw = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
                     cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (new_username, hashed_pw))
                     conn.commit()
-                    st.success("Account created successfully! Please go to the Login tab to log in.")
+                    st.success("Account created successfully! Please switch to the Login tab to log in.")
                 except sqlite3.IntegrityError:
                     st.error("This username is already taken. Please choose another.")
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
 
     conn.close()
     return False
 
 # =================================================================
-# 2. HELPER FUNCTION FOR BACKGROUND AND STYLING
-# This function sets the background image and custom CSS.
+# 3. HELPER FUNCTION FOR BACKGROUND STYLING
 # =================================================================
 def set_background(image_file):
     if not os.path.exists(image_file):
-        st.error(f"Background image not found: '{image_file}'. Using fallback color.")
+        # We won't show an error, just use a fallback color
         st.markdown("""<style>.stApp {background-color: #222222;}</style>""", unsafe_allow_html=True)
         return
     
@@ -82,7 +92,6 @@ def set_background(image_file):
         data = f.read()
     encoded = base64.b64encode(data).decode()
     
-    # This is the more detailed CSS from your code
     css = f"""
     <style>
     .stApp {{
@@ -90,27 +99,17 @@ def set_background(image_file):
         background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }}
-    /* Other styles can be added here if needed */
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
-
 # =================================================================
-# 3. MAIN APPLICATION LOGIC
-# This is the gate. The code inside this 'if' block will only
-# run if the user is successfully logged in.
+# 4. MAIN APPLICATION LOGIC (THE GATE)
 # =================================================================
 if authentication_gate():
+    # --- This part runs only after a successful login ---
 
-    # IMPORTANT: st.set_page_config() must be the first Streamlit command for the main app.
-    st.set_page_config(
-        page_title="AI Financial Advisor",
-        page_icon="💸",
-        layout="wide" 
-    )
-
-    # --- Call the function to set the background ---
+    # Set the background for the main app
     set_background("black-particles-background.avif")
 
     # --- Sidebar with Logout Button ---
@@ -118,11 +117,13 @@ if authentication_gate():
         st.write(f"Welcome, **{st.session_state['username']}**!")
         if st.button("Logout"):
             st.session_state["logged_in"] = False
+            # Clear other session state variables if needed
+            st.session_state.pop("username", None)
+            st.session_state.pop("user_id", None)
             st.rerun()
         st.markdown("---")
-        # You can add your navigation links here
         st.header("Navigation")
-        # Example: st.page_link("pages/dashboard.py", label="Dashboard")
+        # Add your st.page_link() items here for other pages
     
     # --- Main Page Content ---
     st.title("💸 Welcome to Your AI Financial Advisor")
@@ -136,28 +137,15 @@ if authentication_gate():
     st.markdown("""
     <p style='font-size: 1.1rem;'>
         Use the **navigation links in the sidebar** to explore different features of the application.
-        Each page focuses on a specific aspect of financial advisory.
     </p>
     """, unsafe_allow_html=True)
 
     st.subheader("Features include:")
     st.markdown("""
     <ul>
-        <li>📊 Investment Planning: Get personalized advice based on your profile and goals.</li>
-        <li>🔍 Mutual Fund Research: Search for and get details on mutual funds.</li>
-        <li>📄 Document Analyzer: Upload and analyze financial documents with AI.</li>
-        <li>📈 Economic Data (FRED): Explore key economic indicators.</li>
-        <li>📊 Market Trends Data: Access historical data for stocks and indices.</li>
-        <li>📰 Latest Financial News: Stay updated with real-time financial news.</li>
-        <li>🏢 Company Financials: Dive into detailed company financial statements.</li>
-        <li>🧠 AI Summary: Get a consolidated AI overview of your activities.</li>
-        <li>💬 Ask the AI: Pose direct financial questions to the AI.</li>
+        <li>📊 Investment Planning</li>
+        <li>🔍 Mutual Fund Research</li>
+        <li>📄 Document Analyzer</li>
+        <li>... and more!</li>
     </ul>
     """, unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.info("Developed with Streamlit and advanced AI models for a smarter financial experience.")
-
-    # Initialize session state for other parts of your app if needed
-    if 'ai_summary_data' not in st.session_state:
-        st.session_state['ai_summary_data'] = {}
