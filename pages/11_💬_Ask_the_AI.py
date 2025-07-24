@@ -43,8 +43,9 @@ if st.button("Ask AI"):
             # Show a spinner while waiting for the AI
             with st.spinner("🤖 The AI is thinking..."):
                 prompt = (
-                    "You are a helpful financial advisor. Answer the following user question "
-                    "concisely and professionally.\n\n"
+                    "You are a helpful and expert Indian financial advisor. Provide a detailed and comprehensive answer to the following question. "
+                    "Explain the key concepts, provide relevant context, and use examples where helpful. "
+                    "If the question is not financial, answer it thoroughly but gently remind the user that your primary expertise is in finance.\n\n"
                     f"User: {user_question}\n\n"
                     "AI Advisor:"
                 )
