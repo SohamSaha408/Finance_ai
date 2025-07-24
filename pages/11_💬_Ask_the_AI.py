@@ -1,11 +1,9 @@
 import streamlit as st
 import google.generativeai as genai
 import base64
-# --- VOICE INTEGRATION: IMPORTS ---
 from st_audiorecorder import st_audiorecorder
 import speech_recognition as sr
 import io
-# --- END VOICE INTEGRATION: IMPORTS ---
 
 # --- Function to get base64 encoded image ---
 def get_base64_image(image_path):
@@ -13,7 +11,7 @@ def get_base64_image(image_path):
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     except FileNotFoundError:
-        st.error(f"Error: Background image not found at '{image_path}'.")
+        # We'll just ignore the error if the background is not found
         return None
 
 # --- Path to your background image ---
@@ -50,7 +48,6 @@ audio_bytes = st_audiorecorder(pause_threshold=2.0, key="audio_recorder")
 
 if audio_bytes:
     st.info("Audio detected, processing...")
-    # Convert audio bytes to text
     try:
         wav_file = io.BytesIO(audio_bytes)
         r = sr.Recognizer()
@@ -61,23 +58,8 @@ if audio_bytes:
         recognized_text = r.recognize_google(audio_data)
         
         st.success(f"Recognized text: \"{recognized_text}\"")
-        st.session_state.user_question = recognized_text # Update session state
+        st.session_state.user_question = recognized_text
         st.rerun()
 
     except sr.UnknownValueError:
-        st.warning("The AI could not understand the audio. Please try speaking more clearly.")
-    except sr.RequestError as e:
-        st.error(f"Speech recognition service is unavailable. Please check your connection or try again later. Error: {e}")
-    # --- ADDED: Catch any other unexpected errors ---
-    except Exception as e:
-        st.error(f"An unexpected error occurred during audio processing: {e}")
-# --- END VOICE INTEGRATION ---
-
-# The text area will now use the session state value
-user_question_direct = st.text_area(
-    "Your Question:", 
-    value=st.session_state.user_question, 
-    key="atai_direct_ai_question_area"
-) 
-
-if st.button("Ask AI", key="atai
+        st.warning("The AI could not understand the audio.
