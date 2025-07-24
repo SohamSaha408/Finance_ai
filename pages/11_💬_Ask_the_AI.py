@@ -1,8 +1,11 @@
 import streamlit as st
 import google.generativeai as genai
-
-import streamlit as st
 import base64
+# --- VOICE INTEGRATION: IMPORTS ---
+from st_audiorecorder import st_audiorecorder
+import speech_recognition as sr
+import io
+# --- END VOICE INTEGRATION: IMPORTS ---
 
 # --- Function to get base64 encoded image ---
 def get_base64_image(image_path):
@@ -10,10 +13,7 @@ def get_base64_image(image_path):
         return base64.b64encode(img_file.read()).decode()
 
 # --- Path to your background image ---
-# IMPORTANT: Make sure 'black-particles-background.avif' is in the correct directory
-# relative to where your Streamlit app is run from.
-# For example, if it's in a subfolder named 'images', the path would be "images/black-particles-background.avif".
-background_image_path = "black-particles-background.avif" # Updated path
+background_image_path = "black-particles-background.avif"
 
 # --- Get the base64 encoded string and inject CSS ---
 try:
@@ -21,7 +21,7 @@ try:
     background_css = f"""
     <style>
     .stApp {{
-        background-image: url("data:image/avif;base64,{encoded_image}"); /* Changed mime type to avif */
+        background-image: url("data:image/avif;base64,{encoded_image}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -31,24 +31,54 @@ try:
     """
     st.markdown(background_css, unsafe_allow_html=True)
 except FileNotFoundError:
-    st.error(f"Error: Background image not found at '{background_image_path}'. Please check the path for this page.")
+    st.error(f"Error: Background image not found at '{background_image_path}'.")
 except Exception as e:
-    st.error(f"An error occurred while setting the background image for this page: {e}")
+    st.error(f"An error occurred while setting the background image: {e}")
 
-# --- Your page-specific content starts here ---
-# (e.g., st.title, st.write, input widgets, charts, etc.)
+# --- Initialize session state for the text area ---
+if 'user_question' not in st.session_state:
+    st.session_state.user_question = ""
 
+# --- Page Content ---
 st.title("💬 Ask the AI Anything")
 st.markdown("<p style='font-size: 1.1rem;'>Have a direct question for the AI about finance, investing, or anything else?</p>", unsafe_allow_html=True)
 
-user_question_direct = st.text_area("Your Question:", key="atai_direct_ai_question_area") # Unique key
+# --- VOICE INTEGRATION: RECORD AND CONVERT ---
+st.write("#### Ask with your voice 🎙️")
+audio_bytes = st_audiorecorder(pause_threshold=2.0) # Stop recording after 2s of silence
 
-if st.button("Ask AI", key="atai_ask_ai_btn"): # Unique key
+if audio_bytes:
+    # Convert audio bytes to text
+    try:
+        wav_file = io.BytesIO(audio_bytes)
+        r = sr.Recognizer()
+        with sr.AudioFile(wav_file) as source:
+            audio_data = r.record(source)
+        
+        recognized_text = r.recognize_google(audio_data)
+        st.session_state.user_question = recognized_text # Update session state
+        st.rerun() # Rerun to update the text_area with the new value
+
+    except sr.UnknownValueError:
+        st.warning("Could not understand the audio. Please try again.")
+    except sr.RequestError as e:
+        st.error(f"Speech recognition service unavailable; {e}")
+# --- END VOICE INTEGRATION ---
+
+# The text area will now use the session state value, which gets updated by the voice input
+user_question_direct = st.text_area(
+    "Your Question:", 
+    value=st.session_state.user_question, 
+    key="atai_direct_ai_question_area"
+) 
+
+if st.button("Ask AI", key="atai_ask_ai_btn"):
+    # The rest of your code remains the same, as it reads from the text_area
     if user_question_direct:
         try:
             genai.configure(api_key=st.secrets["gemini"]["api_key"])
         except KeyError:
-            st.error("Gemini API key not found in Streamlit secrets. Please ensure .streamlit/secrets.toml is correctly configured with `gemini.api_key`.")
+            st.error("Gemini API key not found in Streamlit secrets.")
             st.stop()
 
         model = genai.GenerativeModel('gemini-1.5-flash')
