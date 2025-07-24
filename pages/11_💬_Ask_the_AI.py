@@ -62,4 +62,51 @@ if audio_bytes:
         st.rerun()
 
     except sr.UnknownValueError:
-        st.warning("The AI could not understand the audio.
+        st.warning("The AI could not understand the audio. Please try speaking more clearly.")
+    except sr.RequestError as e:
+        st.error(f"Speech recognition service is unavailable. Error: {e}")
+    except Exception as e:
+        st.error(f"An unexpected error occurred during audio processing: {e}")
+
+# The text area will now use the session state value
+user_question_direct = st.text_area(
+    "Your Question:", 
+    value=st.session_state.user_question, 
+    key="atai_direct_ai_question_area"
+) 
+
+if st.button("Ask AI", key="atai_ask_ai_btn"):
+    if user_question_direct:
+        try:
+            genai.configure(api_key=st.secrets["gemini"]["api_key"])
+        except (KeyError, AttributeError):
+            st.error("Gemini API key not found. Please configure your Streamlit secrets.")
+            st.stop()
+
+        model = genai.GenerativeModel('gemini-1.5-flash')
+
+        with st.spinner("Getting AI's response..."):
+            try:
+                prompt = (
+                    "You are a helpful and expert Indian financial advisor. Provide a concise and accurate answer to the following question. "
+                    "If the question is not financial, answer generally but remind the user this is a financial advisor tool. "
+                    "Keep answers focused and professional.\n\n"
+                    f"User: {user_question_direct}\n\n"
+                    "AI Advisor:"
+                )
+                response = model.generate_content(contents=[{"role": "user", "parts": [prompt]}])
+                st.subheader("🤖 AI's Answer:")
+                st.markdown(f"<div style='color: white; border: 1px solid #444; padding: 10px; border-radius: 5px;'>{response.text}</div>", unsafe_allow_html=True)
+
+                if 'ai_summary_data' not in st.session_state:
+                    st.session_state['ai_summary_data'] = {}
+                st.session_state['ai_summary_data']['Direct AI Question'] = {
+                    "question": user_question_direct,
+                    "ai_response": response.text
+                }
+            except Exception as e:
+                st.error(f"Error communicating with Gemini AI: {e}")
+    else:
+        st.warning("Please enter your question for the AI.")
+
+st.markdown("---")
