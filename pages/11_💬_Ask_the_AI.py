@@ -1,8 +1,5 @@
 import streamlit as st
 import google.generativeai as genai
-import speech_recognition as sr
-from st_audiorecorder import st_audiorecorder
-import io
 
 # ====================================================================
 # 1. PAGE CONFIGURATION & AUTHENTICATION
@@ -21,74 +18,24 @@ if not st.session_state.get("logged_in", False):
     st.stop() # Stop the script from running further
 
 # ====================================================================
-# 2. VOICE-TO-TEXT FUNCTIONALITY
-# ====================================================================
-
-def recognize_speech():
-    """
-    Displays the audio recorder and processes the recorded audio
-    to return the recognized text.
-    """
-    st.write("#### Ask with your voice 🎙️")
-    audio_bytes = st_audiorecorder(pause_threshold=2.0)
-    
-    if not audio_bytes:
-        return None # No audio recorded
-
-    st.info("Audio recorded. Processing...")
-    try:
-        # Create an in-memory WAV file
-        wav_file = io.BytesIO(audio_bytes)
-        recognizer = sr.Recognizer()
-        
-        with sr.AudioFile(wav_file) as source:
-            audio_data = recognizer.record(source)
-        
-        # Recognize speech using Google's free API
-        recognized_text = recognizer.recognize_google(audio_data)
-        st.success("Speech recognized!")
-        return recognized_text
-
-    except sr.UnknownValueError:
-        st.warning("The AI could not understand the audio. Please try again.")
-        return None
-    except sr.RequestError as e:
-        st.error(f"Could not request results from speech recognition service; {e}")
-        return None
-    except Exception as e:
-        st.error(f"An error occurred during speech recognition: {e}")
-        return None
-
-# ====================================================================
-# 3. MAIN PAGE UI & LOGIC
+# 2. MAIN PAGE UI & LOGIC
 # ====================================================================
 
 st.title("💬 Ask the AI Anything")
-st.markdown("Use your voice or the text box below to ask the AI a question.")
-
-# Initialize the session state for the question if it doesn't exist
-if 'ask_ai_question' not in st.session_state:
-    st.session_state.ask_ai_question = ""
-
-# --- Voice Input ---
-recognized_text = recognize_speech()
-if recognized_text:
-    # If speech was recognized, update the text area and rerun
-    st.session_state.ask_ai_question = recognized_text
-    st.rerun()
+st.markdown("Use the text box below to ask the AI a question about finance or any other topic.")
 
 # --- Text Input ---
 user_question = st.text_area(
-    "Your Question:", 
-    value=st.session_state.ask_ai_question,
-    height=150
+    "Your Question:",
+    height=150,
+    placeholder="Type your financial question here..."
 )
 
 # --- Submit Button & AI Response ---
 if st.button("Ask AI"):
     if user_question:
         try:
-            # Configure the Gemini API key
+            # Configure the Gemini API key from Streamlit secrets
             api_key = st.secrets["gemini"]["api_key"]
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-1.5-flash')
