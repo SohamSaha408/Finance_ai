@@ -2,23 +2,19 @@ import streamlit as st
 import pandas as pd
 import requests
 import google.generativeai as genai
-import numpy as np # For checking NaN values
+import numpy as np 
 
 import streamlit as st
 import base64
 
-# --- Function to get base64 encoded image ---
+
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# --- Path to your background image ---
-# IMPORTANT: Make sure 'black-particles-background.avif' is in the correct directory
-# relative to where your Streamlit app is run from.
-# For example, if it's in a subfolder named 'images', the path would be "images/black-particles-background.avif".
-background_image_path = "black-particles-background.avif" # Updated path
+background_image_path = "black-particles-background.avif" 
 
-# --- Get the base64 encoded string and inject CSS ---
+
 try:
     encoded_image = get_base64_image(background_image_path)
     background_css = f"""
@@ -38,10 +34,6 @@ except FileNotFoundError:
 except Exception as e:
     st.error(f"An error occurred while setting the background image for this page: {e}")
 
-# --- Your page-specific content starts here ---
-# (e.g., st.title, st.write, input widgets, charts, etc.)
-
-# --- Streamlit Page Config ---
 st.set_page_config(page_title="Company Financials", page_icon="🏢")
 
 
@@ -49,20 +41,20 @@ st.set_page_config(page_title="Company Financials", page_icon="🏢")
 st.set_page_config(page_title="Company Financials", page_icon="📈", layout="wide")
 st.title("📈 Company Financials")
 st.write("Dive deep into a company's financial health. Access historical income statements, balance sheets, and cash flow statements to perform fundamental analysis and assess performance.")
-# ... rest of your page code ...
+
 st.markdown("""
     <p style='font-size: 1.1rem;'>
         Get key financial statements (e.g., Income Statement) for publicly traded companies using their ticker symbol.
     </p>
     """, unsafe_allow_html=True)
 
-# --- Configure Gemini API (moved to top for efficiency) ---
+
 try:
     genai.configure(api_key=st.secrets["gemini"]["api_key"])
     model = genai.GenerativeModel("gemini-1.5-flash")
 except KeyError:
     st.error("Gemini API key not found in secrets. Add `gemini.api_key` to `.streamlit/secrets.toml`.")
-    st.stop() # Stop execution if API key is missing
+    st.stop()
 except Exception as e:
     st.error(f"Error configuring Gemini API: {e}")
     st.stop()
