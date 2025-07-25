@@ -6,11 +6,10 @@ import plotly.graph_objects as go
 import base64
 import os
 
-# --- Page Configuration (must be the first Streamlit command) ---
+# --- Page Configuration ---
 st.set_page_config(page_title="Nifty 50 Chart", page_icon="📈", layout="wide")
 
 # --- Authentication Check ---
-# Uncomment this block if this page should be protected by the login.
 # if not st.session_state.get("logged_in", False):
 #     st.error("Please log in to view this page.")
 #     st.stop()
@@ -39,7 +38,6 @@ if encoded_image:
     """
     st.markdown(background_css, unsafe_allow_html=True)
 
-
 # --- Page Content ---
 st.title("📈 Nifty 50 Historical Chart")
 st.write("View the historical performance of the Nifty 50 index with daily profit/loss indicators.")
@@ -55,59 +53,53 @@ with col1:
 with col2:
     chart_end_date = st.date_input("End Date", value=end_date, key="nifty_chart_end_date")
 
-# --- Fetch and Display Chart Button ---
-if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
-    if chart_start_date >= chart_end_date:
-        st.error("Error: Start date must be before end date.")
-    else:
-        with st.spinner(f"Fetching historical data for Nifty 50..."):
-            try:
-                data = yf.download(NIFTY_TICKER, start=chart_start_date, end=chart_end_date)
-                
-                if data.empty:
-                    st.warning("No historical data found for Nifty 50 in the specified date range.")
-                else:
-                    # Calculate daily change for profit/loss indicators
-                    data['Daily_Change'] = data['Close'].diff()
+# --- Chart Generation Logic (now runs automatically) ---
+if chart_start_date >= chart_end_date:
+    st.error("Error: Start date must be before end date.")
+else:
+    with st.spinner(f"Fetching historical data for Nifty 50..."):
+        try:
+            data = yf.download(NIFTY_TICKER, start=chart_start_date, end=chart_end_date)
+            
+            if data.empty:
+                st.warning("No historical data found for Nifty 50 in the specified date range.")
+            else:
+                data['Daily_Change'] = data['Close'].diff()
 
-                    # Create the main line chart figure
-                    fig = go.Figure(data=[go.Scatter(
-                        x=data.index,
-                        y=data['Close'],
-                        mode='lines',
-                        name='Nifty 50 Close',
-                        line=dict(color='#00C853')  # Green line
-                    )])
+                fig = go.Figure(data=[go.Scatter(
+                    x=data.index,
+                    y=data['Close'],
+                    mode='lines',
+                    name='Nifty 50 Close',
+                    line=dict(color='#00C853')
+                )])
 
-                    # Add green upward triangles for days with profit
-                    fig.add_trace(go.Scatter(
-                        x=data[data['Daily_Change'] >= 0].index,
-                        y=data[data['Daily_Change'] >= 0]['Close'],
-                        mode='markers',
-                        name='Profit',
-                        marker=dict(symbol='triangle-up', color='green', size=10)
-                    ))
+                fig.add_trace(go.Scatter(
+                    x=data[data['Daily_Change'] >= 0].index,
+                    y=data[data['Daily_Change'] >= 0]['Close'],
+                    mode='markers',
+                    name='Profit',
+                    marker=dict(symbol='triangle-up', color='green', size=10)
+                ))
 
-                    # Add red downward triangles for days with a loss
-                    fig.add_trace(go.Scatter(
-                        x=data[data['Daily_Change'] < 0].index,
-                        y=data[data['Daily_Change'] < 0]['Close'],
-                        mode='markers',
-                        name='Loss',
-                        marker=dict(symbol='triangle-down', color='red', size=10)
-                    ))
+                fig.add_trace(go.Scatter(
+                    x=data[data['Daily_Change'] < 0].index,
+                    y=data[data['Daily_Change'] < 0]['Close'],
+                    mode='markers',
+                    name='Loss',
+                    marker=dict(symbol='triangle-down', color='red', size=10)
+                ))
 
-                    # Update layout and display the chart
-                    fig.update_layout(
-                        title=f'{NIFTY_TICKER} Closing Price Trend with Daily Changes',
-                        xaxis_rangeslider_visible=True,
-                        xaxis_title="Date",
-                        yaxis_title="Closing Price (INR)",
-                        height=600,
-                        template="plotly_dark",
-                        showlegend=True
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                fig.update_layout(
+                    title=f'{NIFTY_TICKER} Closing Price Trend with Daily Changes',
+                    xaxis_rangeslider_visible=True,
+                    xaxis_title="Date",
+                    yaxis_title="Closing Price (INR)",
+                    height=600,
+                    template="plotly_dark",
+                    showlegend=True
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
