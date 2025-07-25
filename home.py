@@ -14,6 +14,28 @@ st.set_page_config(
     layout="centered" 
 )
 
+def set_background(image_file):
+    if not os.path.exists(image_file):
+        st.markdown("""<style>.stApp {background-color: #222222;}</style>""", unsafe_allow_html=True)
+        return
+    
+    with open(image_file, "rb") as f:
+        data = f.read()
+    encoded = base64.b64encode(data).decode()
+    
+    css = f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/avif;base64,{encoded}");
+        background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+# CALL THE FUNCTION HERE TO SET THE BACKGROUND FOR THE ENTIRE APP
+set_background("black-particles-background.avif")
 # =================================================================
 # 2. AUTHENTICATION AND REGISTRATION LOGIC
 # =================================================================
