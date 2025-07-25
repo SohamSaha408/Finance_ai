@@ -56,16 +56,15 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
         with st.spinner(f"Fetching historical data for Nifty 50..."):
             try:
                 data = yf.download(NIFTY_TICKER, start=chart_start_date, end=chart_end_date)
-
+                
+                # --- FIX: FLATTEN MULTI-LEVEL COLUMNS ---
+                if isinstance(data.columns, pd.MultiIndex):
+                    data.columns = data.columns.droplevel(1)
+                
                 if data.empty:
                     st.warning(f"No data found for Nifty 50 in the specified date range.")
                 else:
                     st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
-                    
-                    # --- DEBUGGING LINE ---
-                    # This will display the raw data table on the screen
-                    st.dataframe(data)
-                    # --- END DEBUGGING LINE ---
 
                     fig = go.Figure(data=[go.Scatter(
                         x=data.index,
