@@ -109,7 +109,16 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
             # --- Line Chart Generation ---
             st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
 
-            fig = go.Figure(data=[go.Scatter(x=data.index, y=data['Close'], mode='lines', name='Nifty 50 Close')])
+            fig = go.Figure(data=[go.Scatter(
+                x=data.index,
+                y=data['Close'],
+                mode='lines',
+                name='Nifty 50 Close',
+                line=dict(color='#00C853')  # A vibrant green color
+            )])
+
+
+
 
             fig.update_layout(
                 title=f'{NIFTY_TICKER} Closing Price Trend',
