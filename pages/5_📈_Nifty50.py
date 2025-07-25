@@ -61,6 +61,11 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
                     st.warning(f"No data found for Nifty 50 in the specified date range.")
                 else:
                     st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
+                    
+                    # --- DEBUGGING LINE ---
+                    # This will display the raw data table on the screen
+                    st.dataframe(data)
+                    # --- END DEBUGGING LINE ---
 
                     fig = go.Figure(data=[go.Scatter(
                         x=data.index,
