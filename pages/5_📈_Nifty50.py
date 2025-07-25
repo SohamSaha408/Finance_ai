@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import base64
 import os
 
-# --- Page Configuration (must be the first Streamlit command) ---
+# --- Page Configuration ---
 st.set_page_config(page_title="Nifty 50 Chart", page_icon="📈", layout="wide")
 
 # --- Helper function for background image ---
@@ -35,7 +35,7 @@ if encoded_image:
 
 # --- Page Content ---
 st.title("📈 Nifty 50 Historical Chart")
-st.write("View the historical performance of the Nifty 50 index over a selected date range.")
+st.write("View the historical performance of the Nifty 50 index with daily profit/loss indicators.")
 
 # --- Define Ticker and Date Range ---
 NIFTY_TICKER = "^NSEI"
@@ -57,15 +57,19 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
             try:
                 data = yf.download(NIFTY_TICKER, start=chart_start_date, end=chart_end_date)
                 
-                # --- FIX: FLATTEN MULTI-LEVEL COLUMNS ---
                 if isinstance(data.columns, pd.MultiIndex):
                     data.columns = data.columns.droplevel(1)
                 
                 if data.empty:
                     st.warning(f"No data found for Nifty 50 in the specified date range.")
                 else:
+                    # --- 1. CALCULATE DAILY AND PERCENTAGE CHANGES ---
+                    data['Daily_Change'] = data['Close'].diff()
+                    data['Pct_Change'] = data['Close'].pct_change() * 100
+
                     st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
 
+                    # Create the main line chart
                     fig = go.Figure(data=[go.Scatter(
                         x=data.index,
                         y=data['Close'],
@@ -74,14 +78,43 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
                         line=dict(color='cyan'),
                         connectgaps=True 
                     )])
+
+                    # --- 2. ADD TRIANGLE MARKERS ---
+                    fig.add_trace(go.Scatter(
+                        x=data[data['Daily_Change'] >= 0].index,
+                        y=data[data['Daily_Change'] >= 0]['Close'],
+                        mode='markers', name='Profit',
+                        marker=dict(symbol='triangle-up', color='green', size=8)
+                    ))
+                    fig.add_trace(go.Scatter(
+                        x=data[data['Daily_Change'] < 0].index,
+                        y=data[data['Daily_Change'] < 0]['Close'],
+                        mode='markers', name='Loss',
+                        marker=dict(symbol='triangle-down', color='red', size=8)
+                    ))
+
+                    # --- 3. ADD PERCENTAGE ANNOTATIONS ---
+                    for index, row in data.iterrows():
+                        pct_change = row['Pct_Change']
+                        # Only show annotations for changes > 1% or < -1%
+                        if pd.notna(pct_change) and abs(pct_change) > 1.0:
+                            if pct_change > 0:
+                                color, y_anchor, text, y_shift = "green", "bottom", f"+{pct_change:.2f}%", 15
+                            else:
+                                color, y_anchor, text, y_shift = "red", "top", f"{pct_change:.2f}%", -15
+                            
+                            fig.add_annotation(
+                                x=index, y=row['Close'], text=text, showarrow=False,
+                                font=dict(color=color, size=10),
+                                yanchor=y_anchor, yshift=y_shift
+                            )
                     
+                    # --- 4. UPDATE LAYOUT AND DISPLAY ---
                     fig.update_layout(
                         title=f'{NIFTY_TICKER} Closing Price Trend',
                         xaxis_rangeslider_visible=True,
-                        xaxis_title="Date",
-                        yaxis_title="Closing Price (INR)",
-                        height=600,
-                        template="plotly_dark"
+                        xaxis_title="Date", yaxis_title="Closing Price (INR)",
+                        height=600, template="plotly_dark", showlegend=True
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
