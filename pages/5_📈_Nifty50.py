@@ -54,27 +54,31 @@ with col2:
     chart_end_date = st.date_input("End Date", value=end_date, key="nifty_chart_end_date")
 
 # --- Chart Generation Logic (now runs automatically) ---
+# --- Chart Generation Logic (now runs automatically) ---
 if chart_start_date >= chart_end_date:
     st.error("Error: Start date must be before end date.")
 else:
     with st.spinner(f"Fetching historical data for Nifty 50..."):
         try:
             data = yf.download(NIFTY_TICKER, start=chart_start_date, end=chart_end_date)
-            
+
             if data.empty:
                 st.warning("No historical data found for Nifty 50 in the specified date range.")
             else:
+                # Calculate daily change for profit/loss indicators
                 data['Daily_Change'] = data['Close'].diff()
 
+                # Create the main line chart figure
                 fig = go.Figure(data=[go.Scatter(
                     x=data.index,
                     y=data['Close'],
                     mode='lines',
                     name='Nifty 50 Close',
-                    line=dict(color='#00C853')
-                    
+                    line=dict(color='#00C853'),
+                    connectgaps=True  # This connects the line across missing dates
                 )])
 
+                # Add green upward triangles for days with profit
                 fig.add_trace(go.Scatter(
                     x=data[data['Daily_Change'] >= 0].index,
                     y=data[data['Daily_Change'] >= 0]['Close'],
@@ -83,6 +87,7 @@ else:
                     marker=dict(symbol='triangle-up', color='green', size=10)
                 ))
 
+                # Add red downward triangles for days with a loss
                 fig.add_trace(go.Scatter(
                     x=data[data['Daily_Change'] < 0].index,
                     y=data[data['Daily_Change'] < 0]['Close'],
@@ -91,6 +96,7 @@ else:
                     marker=dict(symbol='triangle-down', color='red', size=10)
                 ))
 
+                # Update layout and display the chart
                 fig.update_layout(
                     title=f'{NIFTY_TICKER} Closing Price Trend with Daily Changes',
                     xaxis_rangeslider_visible=True,
