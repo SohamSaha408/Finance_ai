@@ -72,7 +72,7 @@ else:
                     mode='lines',
                     name='Nifty 50 Close',
                     line=dict(color='#00C853')
-                    connectgaps=True  # This new line fixes the issue
+                    
                 )])
 
                 fig.add_trace(go.Scatter(
