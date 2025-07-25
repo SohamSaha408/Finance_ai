@@ -57,44 +57,20 @@ if st.button("Get Nifty 50 Chart", key="get_nifty_chart_btn"):
             try:
                 data = yf.download(NIFTY_TICKER, start=chart_start_date, end=chart_end_date)
 
-                # This check is the correct way to see if the DataFrame is empty
                 if data.empty:
                     st.warning(f"No data found for Nifty 50 in the specified date range.")
                 else:
-                    # Calculate percentage change
-                    data['Pct_Change'] = data['Close'].pct_change() * 100
-
                     st.subheader(f"Nifty 50 Closing Price Trend ({chart_start_date} to {chart_end_date})")
 
-                    # Create the main line chart
                     fig = go.Figure(data=[go.Scatter(
                         x=data.index,
                         y=data['Close'],
                         mode='lines',
                         name='Nifty 50 Close',
                         line=dict(color='cyan'),
-                        connectgaps=True # Connects line across weekends/holidays
+                        connectgaps=True 
                     )])
-
-                    # Add annotations for significant changes
-                    for index, row in data.iterrows():
-                        pct_change = row['Pct_Change']
-                        if pd.notna(pct_change) and abs(pct_change) > 1.0:
-                            color = "green" if pct_change > 0 else "red"
-                            y_anchor = "bottom" if pct_change > 0 else "top"
-                            text = f"+{pct_change:.2f}%" if pct_change > 0 else f"{pct_change:.2f}%"
-                            y_shift = 15 if pct_change > 0 else -15
-                            
-                            fig.add_annotation(
-                                x=index,
-                                y=row['Close'],
-                                text=text,
-                                showarrow=False,
-                                font=dict(color=color, size=10),
-                                yanchor=y_anchor,
-                                yshift=y_shift
-                            )
-
+                    
                     fig.update_layout(
                         title=f'{NIFTY_TICKER} Closing Price Trend',
                         xaxis_rangeslider_visible=True,
