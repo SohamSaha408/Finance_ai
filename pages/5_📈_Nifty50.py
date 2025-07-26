@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import base64
 import os
 
-# --- Page Configuration ---
+# --- Page Configuration (must be the first Streamlit command) ---
 st.set_page_config(page_title="Market Chart", page_icon="📈", layout="wide")
 
 # --- Helper function for background image ---
@@ -33,11 +33,11 @@ if encoded_image:
     """
     st.markdown(background_css, unsafe_allow_html=True)
 
-# --- 1. ASSET SELECTION ---
+# --- Asset Selection ---
 TICKERS = {
     "Nifty 50": {"symbol": "^NSEI", "currency": "INR"},
-    "Gold": {"symbol": "GOLDBEES.NS", "currency": "INR"},
-    "Silver": {"symbol": "SILVERBEES.NS", "currency": "INR"}
+    "Gold (INR)": {"symbol": "GOLDBEES.NS", "currency": "INR"},
+    "Silver (INR)": {"symbol": "SILVERBEES.NS", "currency": "INR"}
 }
 
 asset_name = st.selectbox("Select an Asset to Monitor", options=list(TICKERS.keys()))
@@ -49,27 +49,4 @@ st.title(f"📈 {asset_name} Historical Chart")
 st.write(f"View the historical performance of {asset_name} with daily profit/loss indicators.")
 
 # --- Date Range Selection ---
-end_date = datetime.now().date()
-start_date = end_date - timedelta(days=365)
-
-col1, col2 = st.columns(2)
-with col1:
-    chart_start_date = st.date_input("Start Date", value=start_date)
-with col2:
-    chart_end_date = st.date_input("End Date", value=end_date)
-
-st.markdown("---")
-
-# --- Chart Generation Logic ---
-if chart_start_date >= chart_end_date:
-    st.error("Error: Start date must be before end date.")
-else:
-    with st.spinner(f"Fetching historical data for {asset_name}..."):
-        try:
-            data = yf.download(selected_ticker, start=chart_start_date, end=chart_end_date)
-            
-            if isinstance(data.columns, pd.MultiIndex):
-                data.columns = data.columns.droplevel(1)
-            
-            if data.empty:
-                st.warning(f"
+end
