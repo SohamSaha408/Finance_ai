@@ -34,11 +34,23 @@ if encoded_image:
     st.markdown(background_css, unsafe_allow_html=True)
 
 # --- 1. ASSET SELECTION & CONVERSION DATA ---
-# Added 'unit' and 'multiplier' for automatic conversion
 TICKERS = {
+    # Indices & Commodities
     "Nifty 50": {"symbol": "^NSEI", "currency": "INR", "unit": "Points", "multiplier": 1},
     "Gold (INR)": {"symbol": "GOLDBEES.NS", "currency": "INR", "unit": "per Gram", "multiplier": 100},
-    "Silver (INR)": {"symbol": "SILVERBEES.NS", "currency": "INR", "unit": "per Gram", "multiplier": 1}
+    "Silver (INR)": {"symbol": "SILVERBEES.NS", "currency": "INR", "unit": "per Gram", "multiplier": 1},
+    
+    # Indian Stocks
+    "Reliance Industries": {"symbol": "RELIANCE.NS", "currency": "INR", "unit": "per Share", "multiplier": 1},
+    "TCS": {"symbol": "TCS.NS", "currency": "INR", "unit": "per Share", "multiplier": 1},
+
+    # US Stocks
+    "Tesla": {"symbol": "TSLA", "currency": "USD", "unit": "per Share", "multiplier": 1},
+    "Apple": {"symbol": "AAPL", "currency": "USD", "unit": "per Share", "multiplier": 1},
+    "Microsoft": {"symbol": "MSFT", "currency": "USD", "unit": "per Share", "multiplier": 1},
+    "Google": {"symbol": "GOOGL", "currency": "USD", "unit": "per Share", "multiplier": 1},
+    "Amazon": {"symbol": "AMZN", "currency": "USD", "unit": "per Share", "multiplier": 1},
+    "NVIDIA": {"symbol": "NVDA", "currency": "USD", "unit": "per Share", "multiplier": 1},
 }
 
 asset_name = st.selectbox("Select an Asset to Monitor", options=list(TICKERS.keys()))
@@ -75,7 +87,7 @@ else:
             if data.empty:
                 st.warning(f"No data found for {asset_name} in the specified date range.")
             else:
-                # --- 2. APPLY PRICE CONVERSION ---
+                # Apply price conversion/multiplier if necessary
                 multiplier = selected_asset["multiplier"]
                 if multiplier != 1:
                     price_cols = ['Open', 'High', 'Low', 'Close']
