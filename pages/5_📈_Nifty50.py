@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import base64
 import os
 
-# --- Page Configuration (must be the first Streamlit command) ---
+# --- Page Configuration ---
 st.set_page_config(page_title="Market Chart", page_icon="📈", layout="wide")
 
 # --- Helper function for background image ---
@@ -33,16 +33,17 @@ if encoded_image:
     """
     st.markdown(background_css, unsafe_allow_html=True)
 
-# --- Asset Selection ---
+# --- 1. ASSET SELECTION & CONVERSION DATA ---
+# Added 'unit' and 'multiplier' for automatic conversion
 TICKERS = {
-    "Nifty 50": {"symbol": "^NSEI", "currency": "INR"},
-    "Gold (INR)": {"symbol": "GOLDBEES.NS", "currency": "INR"},
-    "Silver (INR)": {"symbol": "SILVERBEES.NS", "currency": "INR"}
+    "Nifty 50": {"symbol": "^NSEI", "currency": "INR", "unit": "Points", "multiplier": 1},
+    "Gold (INR)": {"symbol": "GOLDBEES.NS", "currency": "INR", "unit": "per Gram", "multiplier": 100},
+    "Silver (INR)": {"symbol": "SILVERBEES.NS", "currency": "INR", "unit": "per Gram", "multiplier": 1}
 }
 
 asset_name = st.selectbox("Select an Asset to Monitor", options=list(TICKERS.keys()))
-selected_ticker = TICKERS[asset_name]["symbol"]
-selected_currency = TICKERS[asset_name]["currency"]
+selected_asset = TICKERS[asset_name]
+selected_ticker = selected_asset["symbol"]
 
 # --- Page Content ---
 st.title(f"📈 {asset_name} Historical Chart")
@@ -74,19 +75,25 @@ else:
             if data.empty:
                 st.warning(f"No data found for {asset_name} in the specified date range.")
             else:
+                # --- 2. APPLY PRICE CONVERSION ---
+                multiplier = selected_asset["multiplier"]
+                if multiplier != 1:
+                    price_cols = ['Open', 'High', 'Low', 'Close']
+                    for col in price_cols:
+                        if col in data.columns:
+                            data[col] = data[col] * multiplier
+                
                 # Calculate daily and percentage changes
                 data['Daily_Change'] = data['Close'].diff()
                 data['Pct_Change'] = data['Close'].pct_change() * 100
 
                 st.subheader(f"{asset_name} Closing Price Trend")
 
-                # Create the main line chart
                 fig = go.Figure(data=[go.Scatter(
                     x=data.index, y=data['Close'], mode='lines',
                     name=f'{asset_name} Close', line=dict(color='cyan'), connectgaps=True
                 )])
 
-                # Add triangle markers for profit/loss
                 fig.add_trace(go.Scatter(
                     x=data[data['Daily_Change'] >= 0].index, y=data[data['Daily_Change'] >= 0]['Close'],
                     mode='markers', name='Profit', marker=dict(symbol='triangle-up', color='green', size=8)
@@ -96,7 +103,6 @@ else:
                     mode='markers', name='Loss', marker=dict(symbol='triangle-down', color='red', size=8)
                 ))
 
-                # Add percentage annotations for significant changes
                 for index, row in data.iterrows():
                     pct_change = row['Pct_Change']
                     if pd.notna(pct_change) and abs(pct_change) > 1.0:
@@ -110,11 +116,13 @@ else:
                             font=dict(color=color, size=10), yanchor=y_anchor, yshift=y_shift
                         )
 
-                # Update layout and display the chart
+                # Update y-axis title dynamically
+                yaxis_title = f"Price ({selected_asset['unit']}) ({selected_asset['currency']})"
+                
                 fig.update_layout(
                     title=f'{asset_name} ({selected_ticker}) Closing Price Trend',
                     xaxis_rangeslider_visible=True,
-                    xaxis_title="Date", yaxis_title=f"Closing Price ({selected_currency})",
+                    xaxis_title="Date", yaxis_title=yaxis_title,
                     height=600, template="plotly_dark", showlegend=True
                 )
                 st.plotly_chart(fig, use_container_width=True)
