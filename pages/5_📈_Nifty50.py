@@ -36,8 +36,8 @@ if encoded_image:
 # --- 1. ASSET SELECTION ---
 TICKERS = {
     "Nifty 50": {"symbol": "^NSEI", "currency": "INR"},
-    "Gold": {"symbol": "GC=F", "currency": "USD"},
-    "Silver": {"symbol": "SI=F", "currency": "USD"}
+    "Gold": {"symbol": "GOLDBEES.NS", "currency": "INR"},
+    "Silver": {"symbol": "SILVERBEES.NS", "currency": "INR"}
 }
 
 asset_name = st.selectbox("Select an Asset to Monitor", options=list(TICKERS.keys()))
@@ -72,47 +72,4 @@ else:
                 data.columns = data.columns.droplevel(1)
             
             if data.empty:
-                st.warning(f"No data found for {asset_name} in the specified date range.")
-            else:
-                data['Daily_Change'] = data['Close'].diff()
-                data['Pct_Change'] = data['Close'].pct_change() * 100
-
-                st.subheader(f"{asset_name} Closing Price Trend")
-
-                fig = go.Figure(data=[go.Scatter(
-                    x=data.index, y=data['Close'], mode='lines',
-                    name=f'{asset_name} Close', line=dict(color='cyan'), connectgaps=True
-                )])
-
-                fig.add_trace(go.Scatter(
-                    x=data[data['Daily_Change'] >= 0].index, y=data[data['Daily_Change'] >= 0]['Close'],
-                    mode='markers', name='Profit', marker=dict(symbol='triangle-up', color='green', size=8)
-                ))
-                fig.add_trace(go.Scatter(
-                    x=data[data['Daily_Change'] < 0].index, y=data[data['Daily_Change'] < 0]['Close'],
-                    mode='markers', name='Loss', marker=dict(symbol='triangle-down', color='red', size=8)
-                ))
-
-                for index, row in data.iterrows():
-                    pct_change = row['Pct_Change']
-                    if pd.notna(pct_change) and abs(pct_change) > 1.0:
-                        color = "green" if pct_change > 0 else "red"
-                        y_anchor = "bottom" if pct_change > 0 else "top"
-                        text = f"+{pct_change:.2f}%" if pct_change > 0 else f"{pct_change:.2f}%"
-                        y_shift = 15 if pct_change > 0 else -15
-                        
-                        fig.add_annotation(
-                            x=index, y=row['Close'], text=text, showarrow=False,
-                            font=dict(color=color, size=10), yanchor=y_anchor, yshift=y_shift
-                        )
-
-                fig.update_layout(
-                    title=f'{asset_name} ({selected_ticker}) Closing Price Trend',
-                    xaxis_rangeslider_visible=True,
-                    xaxis_title="Date", yaxis_title=f"Closing Price ({selected_currency})",
-                    height=600, template="plotly_dark", showlegend=True
-                )
-                st.plotly_chart(fig, use_container_width=True)
-
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+                st.warning(f"
